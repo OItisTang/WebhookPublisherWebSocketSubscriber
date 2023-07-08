@@ -11,12 +11,12 @@ this Webhook will receive POST data from the interested server, and it will publ
 ---
 ### WebSocketPushServer
 
-put WebSocketPushServer to anywhere on the server
+put WebSocketPushServer to anywhere on the server  
 and run start.sh
 
 ---
 
 ### WebSocketSubscriberClient
-open index.html from browser
-and subscribe to a "key"
+open index.html from browser  
+and subscribe to a "key"  
 whenever there is a data published with the "key" from the **WebhookCallback**, **WebSocketPushServer** will push it to this client.
