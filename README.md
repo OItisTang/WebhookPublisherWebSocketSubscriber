@@ -4,7 +4,10 @@ A generic Webhook callback to receive data from a interested server, and a WebSo
 ---
 
 ### WebhookCallback (php)
-create a Webhook to WebhookCallback.php?key={an identifier for this webhook data}
+create a Webhook to:
+WebhookCallback.php?key={an identifier for this webhook data, example: my_trello_board_update}
+or
+WebhookCallback.php?keyPathInDataObj={path to a value to be used as key, example: model.shortUrl}
 
 this Webhook will receive POST data from the interested server, and it will publish this data to **WebSocketPushServer**
 
