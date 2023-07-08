@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebSocketSubscriberClient</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="stylesheet" href="https://rawgit.com/summerstyle/jsonTreeViewer/master/libs/jsonTree/jsonTree.css">
+<script src="https://rawgit.com/summerstyle/jsonTreeViewer/master/libs/jsonTree/jsonTree.js"></script>
+<script type="text/javascript">
+	// ---------------------
+	// vendor
+	// ---------------------
+	function httpGetAsync(theUrl, callback = null) {
+		var xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = function() {
+			if (callback && xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+				callback(xmlHttp.responseText);
+			}
+		}
+		xmlHttp.open("GET", theUrl, true); // true for asynchronous
+		xmlHttp.send(null);
+	}
+	
+	function httpGetSync(theUrl, callback = null) {
+		var xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = function() {
+			if (callback && xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+				callback(xmlHttp.responseText);
+			}
+		}
+		xmlHttp.open("GET", theUrl, false); // false for synchronous
+		xmlHttp.send(null);
+	}
+	
+	function escapeHtml(unsafe) {
+		return unsafe
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#039;");
+	}
+	
+	function getWebsocketErrorReason(errorCode) {
+		var reason = "Unknown reason";
+		
+		// See https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1
+		if (errorCode == 1000)
+			reason = "Normal closure, meaning that the purpose for which the connection was established has been fulfilled.";
+		else if(errorCode == 1001)
+			reason = "An endpoint is \"going away\", such as a server going down or a browser having navigated away from a page.";
+		else if(errorCode == 1002)
+			reason = "An endpoint is terminating the connection due to a protocol error";
+		else if(errorCode == 1003)
+			reason = "An endpoint is terminating the connection because it has received a type of data it cannot accept (e.g., an endpoint that understands only text data MAY send this if it receives a binary message).";
+		else if(errorCode == 1004)
+			reason = "Reserved. The specific meaning might be defined in the future.";
+		else if(errorCode == 1005)
+			reason = "No status code was actually present.";
+		else if(errorCode == 1006)
+			reason = "The connection was closed abnormally, e.g., without sending or receiving a Close control frame";
+		else if(errorCode == 1007)
+			reason = "An endpoint is terminating the connection because it has received data within a message that was not consistent with the type of the message (e.g., non-UTF-8 [https://www.rfc-editor.org/rfc/rfc3629] data within a text message).";
+		else if(errorCode == 1008)
+			reason = "An endpoint is terminating the connection because it has received a message that \"violates its policy\". This reason is given either if there is no other sutible reason, or if there is a need to hide specific details about the policy.";
+		else if(errorCode == 1009)
+			reason = "An endpoint is terminating the connection because it has received a message that is too big for it to process.";
+		else if(errorCode == 1010) // Note that this status code is not used by the server, because it can fail the WebSocket handshake instead.
+			reason = "An endpoint (client) is terminating the connection because it has expected the server to negotiate one or more extension, but the server didn't return them in the response message of the WebSocket handshake. <br /> Specifically, the extensions that are needed are: " + event.reason;
+		else if(errorCode == 1011)
+			reason = "A server is terminating the connection because it encountered an unexpected condition that prevented it from fulfilling the request.";
+		else if(errorCode == 1015)
+			reason = "The connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified).";
+		
+		return reason;
+	}
+	
+	function findGetParameter(parameterName) {
+		var result = null;
+		var kvPair = [];
+		location.search
+			.substr(1)
+			.split("&")
+			.forEach(function(item) {
+				kvPair = item.split("=");
+				if (kvPair[0] === parameterName) result = decodeURIComponent(kvPair[1]);
+			});
+		return result;
+	}
+	
+	// ---------------------
+	// date tools
+	// ---------------------
+	function getDateTimeStr() {
+		var now = new Date();
+		var dateStr =
+			now.getFullYear()
+			+ "-" + String(now.getMonth() + 1).padStart(2, '0')
+			+ "-" + String(now.getDate()).padStart(2, '0')
+			+ " "
+			+ String(now.getHours()).padStart(2, '0')
+			+ ":" + String(now.getMinutes()).padStart(2, '0')
+			+ ":" + String(now.getSeconds()).padStart(2, '0');
+		return dateStr;
+	}
+	
+	function getDateStr(date, delimiter='-') {
+		var dd = String(date.getDate()).padStart(2, '0');
+		var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+		var yyyy = date.getFullYear();
+
+		var dateStr = yyyy + delimiter + mm + delimiter + dd;
+		return dateStr;
+	}
+	
+	function getShortTimeStr(date) {
+		var hour = String(date.getHours()).padStart(2, '0');
+		var minute = String(date.getMinutes()).padStart(2, '0');
+
+		var dueTimeStr = hour + ':' + minute;
+		return dueTimeStr;
+	}
+
+	// ---------------------
+	// WebSocketSubscriber: subscribe to a key for updates
+	// ---------------------
+	class WebSocketSubscriber {
+		constructor(onOpenCallback, onPublishCallback, onStatusUpdateCallback) {
+			this.onOpenCallback = onOpenCallback;
+			this.onPublishCallback = onPublishCallback;
+			this.onStatusUpdateCallback = onStatusUpdateCallback;
+		}
+
+		onPong(msgObj) {
+			Logger.info("WebSocketSubscriber.onPong");
+			this.clearCloseWebSocketTimeout();
+		}
+
+		onPublish(msgObj) {
+			Logger.info("WebSocketSubscriber.onPublish: key = [" + msgObj.key + "]");
+			Logger.debug("WebSocketSubscriber.onPublish: value = " + JSON.stringify(msgObj.value, undefined, 2), false);
+			this.onPublishCallback(msgObj);
+		}
+
+		onSubscribeSuccess(msgObj) {
+			Logger.info("WebSocketSubscriber.onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		}
+
+		onUnsubscribeSuccess(msgObj) {
+			Logger.info("WebSocketSubscriber.onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		}
+
+		onWelcome(msgObj) {
+			Logger.info("WebSocketSubscriber.onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
+			this.connectionId = msgObj.value.connectionId;
+		}
+
+		onMessage(msgData) {
+			var msgObj = JSON.parse(msgData);
+			if (msgObj.type == "pong") {
+				this.onPong(msgObj);
+			} else if (msgObj.type == "publish") {
+				this.onPublish(msgObj);
+			} else if (msgObj.type == "subscribeSuccess") {
+				this.onSubscribeSuccess(msgObj);
+			} else if (msgObj.type == "unsubscribeSuccess") {
+				this.onUnsubscribeSuccess(msgObj);
+			} else if (msgObj.type == "welcome") {
+				this.onWelcome(msgObj);
+			} else {
+				Logger.error("unknown message: " + msgData);
+			}
+		}
+
+		subscribe(key) {
+			try {
+				Logger.info("subscriber for key: [" + key + "]");
+				this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
+			} catch (e) {
+				Logger.error(e.stack);
+			}
+		}
+
+		unsubscribe(key) {
+			try {
+				Logger.info("unsubscribe for key: [" + key + "]");
+				this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
+			} catch (e) {
+				Logger.error(e.stack);
+			}
+		}
+
+		notifyStatusUpdate(status) {
+			this.onStatusUpdateCallback(status);
+		}
+
+		clearPingTimeout() {
+			window.clearTimeout(this.pingTimeout);
+			this.pingTimeout = null;
+		}
+
+		clearCloseWebSocketTimeout() {
+			window.clearTimeout(this.closeWebSocketTimeout);
+			this.closeWebSocketTimeout = null;
+		}
+
+		startPing() {
+			try {
+				Logger.info("send ping to server.");
+				this.webSocket.send('{"type": "ping"}');
+			} catch (e) {
+				Logger.error(e.stack);
+			}
+
+			var that = this;
+			
+			this.clearCloseWebSocketTimeout();
+			this.closeWebSocketTimeout = window.setTimeout(function() {
+				Logger.error("didn't receive message from server for ping, so restart WebSocket.");
+				that.disconnect();
+				that.connect();
+			}, 5 * 1000);
+			
+			this.clearPingTimeout();
+			this.pingTimeout = window.setTimeout(function() {
+				that.startPing();
+			}, 30 * 1000);
+		}
+
+		onOpen() {
+			this.startPing();
+			this.onOpenCallback();
+		}
+
+		disconnect() {
+			this.clearCloseWebSocketTimeout();
+			this.clearPingTimeout();
+			this.webSocket.close();
+		}
+
+		connect() {
+			Logger.info("WebSocket new");
+			this.webSocket = new WebSocket('wss://149.28.204.205:8081');
+
+			var that = this;
+
+			this.webSocket.onopen = function(e) {
+				Logger.info("WebSocket open");
+				that.notifyStatusUpdate("open");
+				that.onOpen();
+			}
+			this.webSocket.onmessage = function(e) {
+				//Logger.info("WebSocket message");
+				that.notifyStatusUpdate("open");
+				that.onMessage(e.data);
+			}
+			this.webSocket.onerror = function(e) {
+				Logger.error("WebSocket error");
+				that.notifyStatusUpdate("error");
+			}
+			this.webSocket.onclose = function(e) {
+				Logger.error("WebSocket close, with reason: [" + getWebsocketErrorReason(e.code) + "]");
+				that.notifyStatusUpdate("close");
+			}
+		}
+
+		watchDog() {
+			var that = this;
+			this.watchDogInterval = window.setInterval(function() {
+				if (that.webSocket.readyState != that.webSocket.OPEN) {
+					Logger.error("WebSocketSubscriber.watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+					that.disconnect();
+					that.connect();
+				} else {
+					Logger.debug("WebSocketSubscriber.watchDog: websocket readyState is OPEN.");
+				}
+			}, 60 * 1000);
+		}
+
+		start() {
+			this.connect();
+			this.watchDog();
+		}
+	}
+
+	// ---------------------
+	// UI
+	// ---------------------
+	class Logger {
+		static LogLevels = {
+			Error: 0,
+			Info: 1,
+			Debug: 2,
+		}
+
+		static logLevel = this.LogLevels.Info;
+
+		constructor() {}
+
+		static setLogLevel(logLevel) {
+			this.logLevel = logLevel;
+		}
+
+		static _log(logLevel, str, isShowingInHTML = true) {
+			if (this.logLevel < logLevel) {
+				return;
+			}
+
+			var msg = getDateTimeStr() + ": " + str;
+
+			var logMessageClass = "log";
+			
+			if (logLevel == this.LogLevels.Error) {
+				console.error(msg);
+				logMessageClass = "error";
+			} else if (logLevel == this.LogLevels.Info) {
+				console.info(msg);
+				logMessageClass = "info";
+			} else if (logLevel == this.LogLevels.Debug) {
+				console.debug(msg);
+				logMessageClass = "debug";
+			} else {
+				console.log(msg);
+			}
+			
+			if (isShowingInHTML) {
+				var logMessages = document.getElementById('logMessages');
+				
+				if (logMessages.children.length >= 50) {
+					logMessages.removeChild(
+						logMessages.getElementsByTagName('div')[0]
+					);
+				}
+				
+				var newElement = document.createElement('div');
+				newElement.innerHTML = msg;
+				newElement.classList.add(logMessageClass);
+				logMessages.appendChild(newElement);
+			}
+		}
+
+		static error(str, isShowingInHTML = true) {
+			this._log(this.LogLevels.Error, str, isShowingInHTML);
+		}
+
+		static info(str, isShowingInHTML = true) {
+			this._log(this.LogLevels.Info, str, isShowingInHTML);
+		}
+
+		static debug(str, isShowingInHTML = true) {
+			this._log(this.LogLevels.Debug, str, isShowingInHTML);
+		}
+	}
+
+	class UiView {
+		constructor(key, onSubscribeCallback, onUnsubscribeCallback) {
+			document.getElementById("key").value = key;
+			this.onSubscribeCallback = onSubscribeCallback;
+			this.onUnsubscribeCallback = onUnsubscribeCallback;
+		}
+
+		setServerMethodAndStatus(serverMethod, serverStatus) {
+			document.getElementById("serverMethod").innerHTML = serverMethod;
+
+			document.getElementById("serverStatusIndicator").classList.remove("open");
+			document.getElementById("serverStatusIndicator").classList.remove("error");
+			document.getElementById("serverStatusIndicator").classList.remove("close");
+			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
+		}
+
+		prepareMainUiEventHandlers() {
+			document.getElementById("serverStatusIndicator").onclick = function() {
+				var log = document.getElementById('log');
+				if (log.style.display === "none") {
+					log.style.display = "block";
+				} else {
+					log.style.display = "none";
+				}
+			};
+
+			var that = this;
+			
+			document.getElementById("subscribeBtn").onclick = function() {
+				var key = document.getElementById("key").value;
+				if (key != "") {
+					that.onSubscribeCallback(key);
+				}
+			};
+
+			document.getElementById("unsubscribeBtn").onclick = function() {
+				var key = document.getElementById("key").value;
+				if (key != "") {
+					that.onUnsubscribeCallback(key);
+				}
+			};
+		}
+
+		renderPushMessage(msgObj) {
+			var pushInfoDiv = document.getElementById("pushInfo");
+			this.updateTimestamp = getDateTimeStr();
+			pushInfoDiv.innerHTML = this.updateTimestamp + " - received push message for key: [" + msgObj.key + "]";
+
+			var pushMessageDiv = document.getElementById("pushMessage");
+			while (pushMessageDiv.firstChild) {
+				pushMessageDiv.removeChild(pushMessageDiv.firstChild);
+			}
+			this.msgObjTree = jsonTree.create(msgObj.value, pushMessageDiv);
+			this.msgObjTree.expand();
+		}
+	}
+
+	// ---------------------
+	// app
+	// ---------------------
+	class WebSocketSubscriberClientApp {
+		constructor(autoSubscribeKey) {
+			this.autoSubscribeKey = autoSubscribeKey;
+		}
+
+		onUiSubscribe(key) {
+			this.webSocketSubscriber.subscribe(key);
+		}
+
+		onUiUnsubscribe(key) {
+			this.webSocketSubscriber.unsubscribe(key);
+		}
+
+		onSubscriberOpen() {
+			if (this.autoSubscribeKey != "") {
+				this.webSocketSubscriber.subscribe(this.autoSubscribeKey);
+			}
+		}
+
+		onSubscriberReceiveMessage(msgObj) {
+			this.view.renderPushMessage(msgObj);
+		}
+
+		onSubscriberStatusUpdate(status) {
+			this.view.setServerMethodAndStatus("Push", status);
+		}
+
+		start() {
+			var that = this;
+
+			this.view = new UiView(this.autoSubscribeKey, function(key) {
+				that.onUiSubscribe(key);
+			}, function(key) {
+				that.onUiUnsubscribe(key);
+			});
+			this.view.prepareMainUiEventHandlers();
+
+			this.webSocketSubscriber = new WebSocketSubscriber(function() {
+				that.onSubscriberOpen();
+			}, function(msgObj) {
+				that.onSubscriberReceiveMessage(msgObj);
+			}, function(status) {
+				that.onSubscriberStatusUpdate(status);
+			});
+			this.webSocketSubscriber.start();
+		}
+	}
+
+	// ---------------------
+	// HTML start
+	// ---------------------
+	window.onload = function() {
+		var autoSubscribeKey = "";
+		if (findGetParameter("key") != null && findGetParameter("key") != "") {
+			autoSubscribeKey = findGetParameter("key");
+		}
+
+		var webSocketSubscriberClientApp = new WebSocketSubscriberClientApp(autoSubscribeKey);
+		webSocketSubscriberClientApp.start();
+		window.app = webSocketSubscriberClientApp;
+	};
+</script>
+<style>
+	body {
+		background-color: #154f85;
+		font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans,Ubuntu,Droid Sans,Helvetica Neue,sans-serif;
+	}
+	a {
+		color: black;
+	}
+	#main {
+		display: flex;
+		flex-direction: column;
+		height: 97vh;
+	}
+	#topBar {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		margin-left: 6px;
+		margin-right: 6px;
+	}
+	#logo {
+		margin-top: 3px;
+	}
+	.logoImg {
+		width: 18px;
+		height: 18px;
+	}
+	#middleBar {
+		text-align: center;
+		color: #1A2744;
+	}
+	.keyInput {
+		border-radius: 4px;
+		border: none;
+		background-color: #F3F3F6;
+	}
+	.actionBtn {
+		border-radius: 4px;
+		border: none;
+		background-color: #F3F3F6;
+		cursor: pointer;
+	}
+	#serverStatus {
+		color: white;
+		font-size: smaller;
+	}
+	.serverStatusIndicator {
+		background-color: grey;
+		border-radius: 50%;
+		width: 10px;
+		height: 10px;
+		display: inline-block;
+		cursor: pointer;
+	}
+	.serverStatusIndicator.open {
+		background-color: green;
+	}
+	.serverStatusIndicator.error {
+		background-color: red;
+	}
+	.serverStatusIndicator.close {
+		background-color: grey;
+	}
+	#contentArea {
+		margin-top: 4px;
+		flex-grow: 1;
+		overflow: scroll;
+		border-radius: 6px;
+		margin-left: 10px;
+		margin-right: 10px;
+		background-color: white;
+		overflow: scroll;
+	}
+	.jsontree_tree {
+		margin-left: -20px;
+	}
+	#log {
+		color: white;
+		position: fixed;
+		background-color: #282828e6;
+		left: 0px;
+		top: 36px;
+		width: 100%;
+		height: 90%;
+		overflow-y: scroll;
+		font-size: x-small;
+	}
+	#log a {
+		color: white;
+	}
+	#logMessages {
+		margin-left: 8px;
+		margin-right: 12px;
+	}
+	#logMessages > .error {
+		color: rgba(246, 138, 138, 1);
+	}
+	#logMessages > .info {
+		color: rgba(108, 148, 255, 1);
+	}
+	#logMessages > .debug {
+		color: rgba(0, 201, 201, 1);
+	}
+</style>
+</head>
+<body>
+	<div id="main">
+		<div id="topBar">
+			<div id="logo">
+				<img class="logoImg" id="logoImg" src="icon.png">
+			</div>
+			<div id="middleBar">
+				<input type="text" id="key" class="keyInput" placeholder="subscribe a key to receive updates" size="48">
+				<input type="button" id="subscribeBtn" class="actionBtn" value=" + ">
+				<input type="button" id="unsubscribeBtn" class="actionBtn" value=" - ">
+			</div>
+			<div id="serverStatus">
+				<span class="serverMethod" id="serverMethod"></span>
+				<span class="serverStatusIndicator" id="serverStatusIndicator"></span>
+			</div>
+		</div>
+		<div id="contentArea">
+			<div id="pushInfo">waiting for push message ...</div>
+			<hr>
+			<div id="pushMessage"></div>
+		</div>
+	</div>
+	<div id="log" style="display: none;">
+		<h2>Log</h2>
+		<div id="logMessages"></div>
+	</div>
+</body>
+</html>
