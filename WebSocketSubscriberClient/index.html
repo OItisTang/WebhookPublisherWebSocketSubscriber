@@ -125,33 +125,33 @@
 	// WebSocketSubscriber: subscribe to a key for updates
 	// ---------------------
 	class WebSocketSubscriber {
-		constructor(onOpenCallback, onPublishCallback, onStatusUpdateCallback) {
+		constructor(onOpenCallback, onPublishCallback, onStatusUpdateCallback, logger = console) {
 			this.onOpenCallback = onOpenCallback;
 			this.onPublishCallback = onPublishCallback;
 			this.onStatusUpdateCallback = onStatusUpdateCallback;
+			this.logger = logger;
 		}
 
 		onPong(msgObj) {
-			Logger.info("WebSocketSubscriber.onPong");
+			this.logger.info("WebSocketSubscriber.onPong");
 			this.clearCloseWebSocketTimeout();
 		}
 
 		onPublish(msgObj) {
-			Logger.info("WebSocketSubscriber.onPublish: key = [" + msgObj.key + "]");
-			Logger.debug("WebSocketSubscriber.onPublish: value = " + JSON.stringify(msgObj.value, undefined, 2), false);
+			this.logger.info("WebSocketSubscriber.onPublish: key = [" + msgObj.key + "]");
 			this.onPublishCallback(msgObj);
 		}
 
 		onSubscribeSuccess(msgObj) {
-			Logger.info("WebSocketSubscriber.onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+			this.logger.info("WebSocketSubscriber.onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 		}
 
 		onUnsubscribeSuccess(msgObj) {
-			Logger.info("WebSocketSubscriber.onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+			this.logger.info("WebSocketSubscriber.onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 		}
 
 		onWelcome(msgObj) {
-			Logger.info("WebSocketSubscriber.onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
+			this.logger.info("WebSocketSubscriber.onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
 			this.connectionId = msgObj.value.connectionId;
 		}
 
@@ -168,25 +168,25 @@
 			} else if (msgObj.type == "welcome") {
 				this.onWelcome(msgObj);
 			} else {
-				Logger.error("unknown message: " + msgData);
+				this.logger.debug("unknown message: " + msgData);
 			}
 		}
 
 		subscribe(key) {
 			try {
-				Logger.info("subscriber for key: [" + key + "]");
+				this.logger.info("subscriber for key: [" + key + "]");
 				this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
 			} catch (e) {
-				Logger.error(e.stack);
+				this.logger.error(e.stack);
 			}
 		}
 
 		unsubscribe(key) {
 			try {
-				Logger.info("unsubscribe for key: [" + key + "]");
+				this.logger.info("unsubscribe for key: [" + key + "]");
 				this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
 			} catch (e) {
-				Logger.error(e.stack);
+				this.logger.error(e.stack);
 			}
 		}
 
@@ -206,17 +206,17 @@
 
 		startPing() {
 			try {
-				Logger.info("send ping to server.");
+				this.logger.info("send ping to server.");
 				this.webSocket.send('{"type": "ping"}');
 			} catch (e) {
-				Logger.error(e.stack);
+				this.logger.error(e.stack);
 			}
 
 			var that = this;
 			
 			this.clearCloseWebSocketTimeout();
 			this.closeWebSocketTimeout = window.setTimeout(function() {
-				Logger.error("didn't receive message from server for ping, so restart WebSocket.");
+				that.logger.error("didn't receive message from server for ping, so restart WebSocket.");
 				that.disconnect();
 				that.connect();
 			}, 5 * 1000);
@@ -239,27 +239,26 @@
 		}
 
 		connect() {
-			Logger.info("WebSocket new");
+			this.logger.info("WebSocket new");
 			this.webSocket = new WebSocket('wss://149.28.204.205:8081');
 
 			var that = this;
 
 			this.webSocket.onopen = function(e) {
-				Logger.info("WebSocket open");
+				that.logger.info("WebSocket open");
 				that.notifyStatusUpdate("open");
 				that.onOpen();
 			}
 			this.webSocket.onmessage = function(e) {
-				//Logger.info("WebSocket message");
 				that.notifyStatusUpdate("open");
 				that.onMessage(e.data);
 			}
 			this.webSocket.onerror = function(e) {
-				Logger.error("WebSocket error");
+				that.logger.error("WebSocket error");
 				that.notifyStatusUpdate("error");
 			}
 			this.webSocket.onclose = function(e) {
-				Logger.error("WebSocket close, with reason: [" + getWebsocketErrorReason(e.code) + "]");
+				that.logger.error("WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
 				that.notifyStatusUpdate("close");
 			}
 		}
@@ -268,11 +267,11 @@
 			var that = this;
 			this.watchDogInterval = window.setInterval(function() {
 				if (that.webSocket.readyState != that.webSocket.OPEN) {
-					Logger.error("WebSocketSubscriber.watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+					that.logger.error("WebSocketSubscriber.watchDog: websocket readyState is not OPEN, so restart WebSocket.");
 					that.disconnect();
 					that.connect();
 				} else {
-					Logger.debug("WebSocketSubscriber.watchDog: websocket readyState is OPEN.");
+					that.logger.debug("WebSocketSubscriber.watchDog: websocket readyState is OPEN.");
 				}
 			}, 60 * 1000);
 		}
@@ -294,6 +293,7 @@
 		}
 
 		static logLevel = this.LogLevels.Info;
+		static logCallback = null;
 
 		constructor() {}
 
@@ -301,7 +301,11 @@
 			this.logLevel = logLevel;
 		}
 
-		static _log(logLevel, str, isShowingInHTML = true) {
+		static setLogCallback(logCallback) {
+			this.logCallback = logCallback;
+		}
+
+		static _log(logLevel, str) {
 			if (this.logLevel < logLevel) {
 				return;
 			}
@@ -323,32 +327,21 @@
 				console.log(msg);
 			}
 			
-			if (isShowingInHTML) {
-				var logMessages = document.getElementById('logMessages');
-				
-				if (logMessages.children.length >= 50) {
-					logMessages.removeChild(
-						logMessages.getElementsByTagName('div')[0]
-					);
-				}
-				
-				var newElement = document.createElement('div');
-				newElement.innerHTML = msg;
-				newElement.classList.add(logMessageClass);
-				logMessages.appendChild(newElement);
+			if (this.logCallback) {
+				this.logCallback(logMessageClass, msg);
 			}
 		}
 
-		static error(str, isShowingInHTML = true) {
-			this._log(this.LogLevels.Error, str, isShowingInHTML);
+		static error(str) {
+			this._log(this.LogLevels.Error, str);
 		}
 
-		static info(str, isShowingInHTML = true) {
-			this._log(this.LogLevels.Info, str, isShowingInHTML);
+		static info(str) {
+			this._log(this.LogLevels.Info, str);
 		}
 
-		static debug(str, isShowingInHTML = true) {
-			this._log(this.LogLevels.Debug, str, isShowingInHTML);
+		static debug(str) {
+			this._log(this.LogLevels.Debug, str);
 		}
 	}
 
@@ -357,15 +350,6 @@
 			document.getElementById("key").value = key;
 			this.onSubscribeCallback = onSubscribeCallback;
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
-		}
-
-		setServerMethodAndStatus(serverMethod, serverStatus) {
-			document.getElementById("serverMethod").innerHTML = serverMethod;
-
-			document.getElementById("serverStatusIndicator").classList.remove("open");
-			document.getElementById("serverStatusIndicator").classList.remove("error");
-			document.getElementById("serverStatusIndicator").classList.remove("close");
-			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
 		}
 
 		prepareMainUiEventHandlers() {
@@ -393,6 +377,29 @@
 					that.onUnsubscribeCallback(key);
 				}
 			};
+		}
+
+		setServerMethodAndStatus(serverMethod, serverStatus) {
+			document.getElementById("serverMethod").innerHTML = serverMethod;
+
+			document.getElementById("serverStatusIndicator").classList.remove("open");
+			document.getElementById("serverStatusIndicator").classList.remove("error");
+			document.getElementById("serverStatusIndicator").classList.remove("close");
+			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
+		}
+
+		log(logMessageClass, msg) {
+			var logMessages = document.getElementById('logMessages');
+			if (logMessages.children.length >= 50) {
+				logMessages.removeChild(
+					logMessages.getElementsByTagName('div')[0]
+				);
+			}
+			
+			var newElement = document.createElement('div');
+			newElement.innerHTML = msg;
+			newElement.classList.add(logMessageClass);
+			logMessages.appendChild(newElement);
 		}
 
 		renderPushMessage(msgObj) {
@@ -425,6 +432,11 @@
 			this.webSocketSubscriber.unsubscribe(key);
 		}
 
+		onLoggerLog(logMessageClass, msg) {
+			var firstLine = msg.split('\n')[0];
+			this.view.log(logMessageClass, firstLine);
+		}
+
 		onSubscriberOpen() {
 			if (this.autoSubscribeKey != "") {
 				this.webSocketSubscriber.subscribe(this.autoSubscribeKey);
@@ -447,6 +459,11 @@
 			}, function(key) {
 				that.onUiUnsubscribe(key);
 			});
+
+			Logger.setLogCallback(function(logMessageClass, msg) {
+				that.onLoggerLog(logMessageClass, msg);
+			});
+
 			this.view.prepareMainUiEventHandlers();
 
 			this.webSocketSubscriber = new WebSocketSubscriber(function() {
@@ -455,7 +472,7 @@
 				that.onSubscriberReceiveMessage(msgObj);
 			}, function(status) {
 				that.onSubscriberStatusUpdate(status);
-			});
+			}, Logger);
 			this.webSocketSubscriber.start();
 		}
 	}
