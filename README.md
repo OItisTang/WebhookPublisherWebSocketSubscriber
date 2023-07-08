@@ -4,7 +4,7 @@ A generic Webhook callback to receive data from a interested server, and a WebSo
 ---
 
 ### WebhookCallback
-create a Webhook to WebhookCallback.php?key=<an identifier for this webhook data>
+create a Webhook to WebhookCallback.php?key={an identifier for this webhook data}
 
 this Webhook will receive POST data from the interested server, and it will publish this data to **WebSocketPushServer**
 
