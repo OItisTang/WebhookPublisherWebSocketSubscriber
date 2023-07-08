@@ -4,6 +4,10 @@
 <title>WebSocketSubscriberClient</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="icon.png">
+<!--
+<script src="https://raw.githubusercontent.com/OItisTang/WebhookPublisherWebSocketSubscriber/main/WebSocketSubscriberClient/Logger.js"></script>
+<script src="https://raw.githubusercontent.com/OItisTang/WebhookPublisherWebSocketSubscriber/main/WebSocketSubscriberClient/WebSocketSubscriber.js"></script>
+-->
 <script src="Logger.js"></script>
 <script src="WebSocketSubscriber.js"></script>
 <link rel="stylesheet" href="https://rawgit.com/summerstyle/jsonTreeViewer/master/libs/jsonTree/jsonTree.css">
@@ -26,22 +30,6 @@
 	}
 	
 	// ---------------------
-	// date tools
-	// ---------------------
-	function getDateTimeStr() {
-		var now = new Date();
-		var dateStr =
-			now.getFullYear()
-			+ "-" + String(now.getMonth() + 1).padStart(2, '0')
-			+ "-" + String(now.getDate()).padStart(2, '0')
-			+ " "
-			+ String(now.getHours()).padStart(2, '0')
-			+ ":" + String(now.getMinutes()).padStart(2, '0')
-			+ ":" + String(now.getSeconds()).padStart(2, '0');
-		return dateStr;
-	}
-
-	// ---------------------
 	// UI
 	// ---------------------
 	class UiView {
@@ -49,6 +37,19 @@
 			document.getElementById("key").value = key;
 			this.onSubscribeCallback = onSubscribeCallback;
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
+		}
+
+		getDateTimeStr() {
+			var now = new Date();
+			var dateStr =
+				now.getFullYear()
+				+ "-" + String(now.getMonth() + 1).padStart(2, '0')
+				+ "-" + String(now.getDate()).padStart(2, '0')
+				+ " "
+				+ String(now.getHours()).padStart(2, '0')
+				+ ":" + String(now.getMinutes()).padStart(2, '0')
+				+ ":" + String(now.getSeconds()).padStart(2, '0');
+			return dateStr;
 		}
 
 		prepareMainUiEventHandlers() {
@@ -103,7 +104,7 @@
 
 		renderPushMessage(msgObj) {
 			var pushInfoDiv = document.getElementById("pushInfo");
-			this.updateTimestamp = getDateTimeStr();
+			this.updateTimestamp = this.getDateTimeStr();
 			pushInfoDiv.innerHTML = this.updateTimestamp + " - received push message for key: [" + msgObj.key + "]";
 
 			var pushMessageDiv = document.getElementById("pushMessage");
