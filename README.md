@@ -3,13 +3,13 @@ A generic Webhook callback to receive data from a interested server, and a WebSo
 
 ---
 
-### WebhookCallback
+### WebhookCallback (php)
 create a Webhook to WebhookCallback.php?key={an identifier for this webhook data}
 
 this Webhook will receive POST data from the interested server, and it will publish this data to **WebSocketPushServer**
 
 ---
-### WebSocketPushServer
+### WebSocketPushServer (php)
 
 put WebSocketPushServer to anywhere on the server  
 and run start.sh
