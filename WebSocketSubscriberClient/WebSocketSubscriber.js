@@ -47,41 +47,41 @@ class WebSocketSubscriber {
 		this.logger = logger;
 	}
 
-	onPong(msgObj) {
-		this.logger.info("WebSocketSubscriber.onPong");
-		this.clearCloseWebSocketTimeout();
+	_onPong(msgObj) {
+		this.logger.info("WebSocketSubscriber._onPong");
+		this._clearCloseWebSocketTimeout();
 	}
 
-	onPublish(msgObj) {
-		this.logger.info("WebSocketSubscriber.onPublish: key = [" + msgObj.key + "]");
+	_onPublish(msgObj) {
+		this.logger.info("WebSocketSubscriber._onPublish: key = [" + msgObj.key + "]");
 		this.onPublishCallback(msgObj);
 	}
 
-	onSubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber.onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+	_onSubscribeSuccess(msgObj) {
+		this.logger.info("WebSocketSubscriber._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 	}
 
-	onUnsubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber.onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+	_onUnsubscribeSuccess(msgObj) {
+		this.logger.info("WebSocketSubscriber._onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 	}
 
-	onWelcome(msgObj) {
-		this.logger.info("WebSocketSubscriber.onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
+	_onWelcome(msgObj) {
+		this.logger.info("WebSocketSubscriber._onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
 		this.connectionId = msgObj.value.connectionId;
 	}
 
-	onMessage(msgData) {
+	_onMessage(msgData) {
 		var msgObj = JSON.parse(msgData);
 		if (msgObj.type == "pong") {
-			this.onPong(msgObj);
+			this._onPong(msgObj);
 		} else if (msgObj.type == "publish") {
-			this.onPublish(msgObj);
+			this._onPublish(msgObj);
 		} else if (msgObj.type == "subscribeSuccess") {
-			this.onSubscribeSuccess(msgObj);
+			this._onSubscribeSuccess(msgObj);
 		} else if (msgObj.type == "unsubscribeSuccess") {
-			this.onUnsubscribeSuccess(msgObj);
+			this._onUnsubscribeSuccess(msgObj);
 		} else if (msgObj.type == "welcome") {
-			this.onWelcome(msgObj);
+			this._onWelcome(msgObj);
 		} else {
 			this.logger.debug("unknown message: " + msgData);
 		}
@@ -105,21 +105,21 @@ class WebSocketSubscriber {
 		}
 	}
 
-	notifyStatusUpdate(status) {
+	_notifyStatusUpdate(status) {
 		this.onStatusUpdateCallback(status);
 	}
 
-	clearPingTimeout() {
+	_clearPingTimeout() {
 		window.clearTimeout(this.pingTimeout);
 		this.pingTimeout = null;
 	}
 
-	clearCloseWebSocketTimeout() {
+	_clearCloseWebSocketTimeout() {
 		window.clearTimeout(this.closeWebSocketTimeout);
 		this.closeWebSocketTimeout = null;
 	}
 
-	startPing() {
+	_startPing() {
 		try {
 			this.logger.info("send ping to server.");
 			this.webSocket.send('{"type": "ping"}');
@@ -129,31 +129,31 @@ class WebSocketSubscriber {
 
 		var that = this;
 		
-		this.clearCloseWebSocketTimeout();
+		this._clearCloseWebSocketTimeout();
 		this.closeWebSocketTimeout = window.setTimeout(function() {
 			that.logger.error("didn't receive message from server for ping, so restart WebSocket.");
-			that.disconnect();
-			that.connect();
+			that._disconnect();
+			that._connect();
 		}, 5 * 1000);
 		
-		this.clearPingTimeout();
+		this._clearPingTimeout();
 		this.pingTimeout = window.setTimeout(function() {
-			that.startPing();
+			that._startPing();
 		}, 30 * 1000);
 	}
 
-	onOpen() {
-		this.startPing();
+	_onOpen() {
+		this._startPing();
 		this.onOpenCallback();
 	}
 
-	disconnect() {
-		this.clearCloseWebSocketTimeout();
-		this.clearPingTimeout();
+	_disconnect() {
+		this._clearCloseWebSocketTimeout();
+		this._clearPingTimeout();
 		this.webSocket.close();
 	}
 
-	connect() {
+	_connect() {
 		this.logger.info("WebSocket new");
 		this.webSocket = new WebSocket(this.webSocketServerAddr);
 
@@ -161,38 +161,38 @@ class WebSocketSubscriber {
 
 		this.webSocket.onopen = function(e) {
 			that.logger.info("WebSocket open");
-			that.notifyStatusUpdate("open");
-			that.onOpen();
+			that._notifyStatusUpdate("open");
+			that._onOpen();
 		}
 		this.webSocket.onmessage = function(e) {
-			that.notifyStatusUpdate("open");
-			that.onMessage(e.data);
+			that._notifyStatusUpdate("open");
+			that._onMessage(e.data);
 		}
 		this.webSocket.onerror = function(e) {
 			that.logger.error("WebSocket error");
-			that.notifyStatusUpdate("error");
+			that._notifyStatusUpdate("error");
 		}
 		this.webSocket.onclose = function(e) {
 			that.logger.error("WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
-			that.notifyStatusUpdate("close");
+			that._notifyStatusUpdate("close");
 		}
 	}
 
-	watchDog() {
+	_watchDog() {
 		var that = this;
 		this.watchDogInterval = window.setInterval(function() {
 			if (that.webSocket.readyState != that.webSocket.OPEN) {
-				that.logger.error("WebSocketSubscriber.watchDog: websocket readyState is not OPEN, so restart WebSocket.");
-				that.disconnect();
-				that.connect();
+				that.logger.error("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+				that._disconnect();
+				that._connect();
 			} else {
-				that.logger.debug("WebSocketSubscriber.watchDog: websocket readyState is OPEN.");
+				that.logger.debug("WebSocketSubscriber._watchDog: websocket readyState is OPEN.");
 			}
 		}, 60 * 1000);
 	}
 
 	start() {
-		this.connect();
-		this.watchDog();
+		this._connect();
+		this._watchDog();
 	}
 }

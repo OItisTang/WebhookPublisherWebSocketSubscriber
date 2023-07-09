@@ -39,7 +39,7 @@
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
 		}
 
-		getDateTimeStr() {
+		_getDateTimeStr() {
 			var now = new Date();
 			var dateStr =
 				now.getFullYear()
@@ -104,7 +104,7 @@
 
 		renderPushMessage(msgObj) {
 			var pushInfoDiv = document.getElementById("pushInfo");
-			this.updateTimestamp = this.getDateTimeStr();
+			this.updateTimestamp = this._getDateTimeStr();
 			pushInfoDiv.innerHTML = this.updateTimestamp + " - received push message for key: [" + msgObj.key + "]";
 
 			var pushMessageDiv = document.getElementById("pushMessage");
@@ -124,30 +124,30 @@
 			this.autoSubscribeKey = autoSubscribeKey;
 		}
 
-		onUiSubscribe(key) {
+		_onUiSubscribe(key) {
 			this.webSocketSubscriber.subscribe(key);
 		}
 
-		onUiUnsubscribe(key) {
+		_onUiUnsubscribe(key) {
 			this.webSocketSubscriber.unsubscribe(key);
 		}
 
-		onLoggerLog(logMessageClass, msg) {
+		_onLoggerLog(logMessageClass, msg) {
 			var firstLine = msg.split('\n')[0];
 			this.view.log(logMessageClass, firstLine);
 		}
 
-		onSubscriberOpen() {
+		_onSubscriberOpen() {
 			if (this.autoSubscribeKey != "") {
 				this.webSocketSubscriber.subscribe(this.autoSubscribeKey);
 			}
 		}
 
-		onSubscriberReceiveMessage(msgObj) {
+		_onSubscriberReceiveMessage(msgObj) {
 			this.view.renderPushMessage(msgObj);
 		}
 
-		onSubscriberStatusUpdate(status) {
+		_onSubscriberStatusUpdate(status) {
 			this.view.setServerMethodAndStatus("Push", status);
 		}
 
@@ -155,23 +155,23 @@
 			var that = this;
 
 			this.view = new UiView(this.autoSubscribeKey, function(key) {
-				that.onUiSubscribe(key);
+				that._onUiSubscribe(key);
 			}, function(key) {
-				that.onUiUnsubscribe(key);
+				that._onUiUnsubscribe(key);
 			});
 
 			Logger.setLogCallback(function(logMessageClass, msg) {
-				that.onLoggerLog(logMessageClass, msg);
+				that._onLoggerLog(logMessageClass, msg);
 			});
 
 			this.view.prepareMainUiEventHandlers();
 
 			this.webSocketSubscriber = new WebSocketSubscriber('wss://149.28.204.205:8081', function() {
-				that.onSubscriberOpen();
+				that._onSubscriberOpen();
 			}, function(msgObj) {
-				that.onSubscriberReceiveMessage(msgObj);
+				that._onSubscriberReceiveMessage(msgObj);
 			}, function(status) {
-				that.onSubscriberStatusUpdate(status);
+				that._onSubscriberStatusUpdate(status);
 			}, Logger);
 			this.webSocketSubscriber.start();
 		}
