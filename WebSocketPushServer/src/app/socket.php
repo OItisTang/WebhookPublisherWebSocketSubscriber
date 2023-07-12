@@ -57,7 +57,7 @@ class Socket implements MessageComponentInterface {
 		$publishJson = json_encode($msgObj, JSON_UNESCAPED_SLASHES);
 
 		foreach ($this->subscribers as $subscriber) {
-			if ($msgObj->key == $subscriber->key) {
+			if ($msgObj->key == $subscriber->key || "_all_" == $subscriber->key) {
 				$subscriber->conn->send($publishJson);
 				$this->log("publish -> ({$subscriber->conn->resourceId} - {$subscriber->conn->remoteAddress}) with message.key: [{$msgObj->key}]");
 			}
