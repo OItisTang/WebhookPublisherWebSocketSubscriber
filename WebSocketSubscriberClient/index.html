@@ -17,10 +17,10 @@
 	// vendor
 	// ---------------------
 	function findGetParameter(parameterName) {
-		var result = null;
+		var result = "";
 		var kvPair = [];
 		location.search
-			.substr(1)
+			.substr(1) // eat "?" character
 			.split("&")
 			.forEach(function(item) {
 				kvPair = item.split("=");
@@ -181,13 +181,11 @@
 	// HTML start
 	// ---------------------
 	window.onload = function() {
-		var autoSubscribeKey = "";
-		if (findGetParameter("key") != null && findGetParameter("key") != "") {
-			autoSubscribeKey = findGetParameter("key");
-		}
+		var autoSubscribeKey = findGetParameter("key");
 
 		var webSocketSubscriberClientApp = new WebSocketSubscriberClientApp(autoSubscribeKey);
 		webSocketSubscriberClientApp.start();
+		
 		window.app = webSocketSubscriberClientApp;
 	};
 </script>
