@@ -143,12 +143,12 @@ class Socket implements MessageComponentInterface {
 
 		$publishObjFromDB = $this->publishDataDBManager->readPublishDataFromDB($msgObj->key);
 
-		$valueObj = new stdClass();
+		$valueObj = new \stdClass();
 		$valueObj->connectionId = $conn->resourceId;
 		$valueObj->key = $msgObj->key;
 		$valueObj->cachedPublishData = $publishObjFromDB;
 
-		$ackObj = new stdClass();
+		$ackObj = new \stdClass();
 		$ackObj->type = "subscribeSuccess";
 		$ackObj->value = $valueObj;
 
