@@ -39,9 +39,10 @@ function getWebsocketErrorReason(errorCode) {
 // WebSocketSubscriber: subscribe to a key for updates
 // ---------------------
 class WebSocketSubscriber {
-	constructor(webSocketServerAddr, onOpenCallback, onPublishCallback, onStatusUpdateCallback, logger = console) {
+	constructor(webSocketServerAddr, onOpenCallback, onSubscribeSuccessCallback, onPublishCallback, onStatusUpdateCallback, logger = console) {
 		this.webSocketServerAddr = webSocketServerAddr;
 		this.onOpenCallback = onOpenCallback;
+		this.onSubscribeSuccessCallback = onSubscribeSuccessCallback;
 		this.onPublishCallback = onPublishCallback;
 		this.onStatusUpdateCallback = onStatusUpdateCallback;
 		this.logger = logger;
@@ -59,6 +60,7 @@ class WebSocketSubscriber {
 
 	_onSubscribeSuccess(msgObj) {
 		this.logger.info("WebSocketSubscriber._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		this.onSubscribeSuccessCallback(msgObj);
 	}
 
 	_onUnsubscribeSuccess(msgObj) {

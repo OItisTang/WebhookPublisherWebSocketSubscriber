@@ -2,6 +2,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+mkdir -p log
+mkdir -p db
+
 $SCRIPT_DIR/src/_start-server.sh &
 
 sleep 2

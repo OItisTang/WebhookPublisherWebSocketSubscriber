@@ -102,16 +102,16 @@
 			logMessages.appendChild(newElement);
 		}
 
-		renderPushMessage(msgObj) {
-			var pushInfoDiv = document.getElementById("pushInfo");
+		renderMessage(msgObj) {
+			var messageInfoDiv = document.getElementById("messageInfo");
 			this.updateTimestamp = this._getDateTimeStr();
-			pushInfoDiv.innerHTML = this.updateTimestamp + " - received push message for key: [" + msgObj.key + "]";
+			messageInfoDiv.innerHTML = this.updateTimestamp + " - received " + msgObj.type + " message for key: [" + msgObj.key + "]";
 
-			var pushMessageDiv = document.getElementById("pushMessage");
-			while (pushMessageDiv.firstChild) {
-				pushMessageDiv.removeChild(pushMessageDiv.firstChild);
+			var messageDataDiv = document.getElementById("messageData");
+			while (messageDataDiv.firstChild) {
+				messageDataDiv.removeChild(messageDataDiv.firstChild);
 			}
-			this.msgObjTree = jsonTree.create(msgObj.value, pushMessageDiv);
+			this.msgObjTree = jsonTree.create(msgObj, messageDataDiv);
 			this.msgObjTree.expand();
 		}
 	}
@@ -143,8 +143,12 @@
 			}
 		}
 
+		_onSubscriberSubscribeSuccess(msgObj) {
+			this.view.renderMessage(msgObj);
+		}
+
 		_onSubscriberReceiveMessage(msgObj) {
-			this.view.renderPushMessage(msgObj);
+			this.view.renderMessage(msgObj);
 		}
 
 		_onSubscriberStatusUpdate(status) {
@@ -168,6 +172,8 @@
 
 			this.webSocketSubscriber = new WebSocketSubscriber('wss://149.28.204.205:8081', function() {
 				that._onSubscriberOpen();
+			}, function(msgObj) {
+				that._onSubscriberSubscribeSuccess(msgObj);
 			}, function(msgObj) {
 				that._onSubscriberReceiveMessage(msgObj);
 			}, function(status) {
@@ -312,9 +318,9 @@
 			</div>
 		</div>
 		<div id="contentArea">
-			<div id="pushInfo">waiting for push message ...</div>
+			<div id="messageInfo">waiting for message ...</div>
 			<hr>
-			<div id="pushMessage"></div>
+			<div id="messageData"></div>
 		</div>
 	</div>
 	<div id="log" style="display: none;">

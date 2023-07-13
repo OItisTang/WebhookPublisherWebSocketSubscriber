@@ -52,6 +52,7 @@ if ($keyPathInDataObj != "") {
 	$publishObj = new stdClass();
 	$publishObj->type = "publish";
 	$publishObj->key = $key;
+	$publishObj->date = date('Y-m-d H:i:s');
 	$publishObj->value = $dataObj;
 
 	$publishJson = json_encode($publishObj, JSON_UNESCAPED_SLASHES);
