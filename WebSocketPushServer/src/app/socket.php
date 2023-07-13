@@ -141,7 +141,7 @@ class Socket implements MessageComponentInterface {
 
 		$this->addSubscriber($msgObj->key, $conn);
 
-		$publishObjFromDB = $publishDataDBManager->readPublishDataFromDB($key);
+		$publishObjFromDB = $this->publishDataDBManager->readPublishDataFromDB($key);
 
 		$valueObj = new stdClass();
 		$valueObj->connectionId = $conn->resourceId;
