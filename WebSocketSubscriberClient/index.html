@@ -169,19 +169,19 @@
 			this.webSocketSubscriber = new WebSocketSubscriber(
 				'wss://149.28.204.205:8081',
 				{
-					onWelcomeMsgCallback = function(msgObj) {
+					onWelcomeMsgCallback : function(msgObj) {
 						that._onSubscriber_WelcomeMsg(msgObj);
 					},
-					onPublishMsgCallback = function(msgObj) {
+					onPublishMsgCallback : function(msgObj) {
 						that._onSubscriber_PublishMsg(msgObj);
 					},
-					onSubscribeSuccessMsgCallback = function(msgObj) {
+					onSubscribeSuccessMsgCallback : function(msgObj) {
 						that._onSubscriber_SubscribeSuccessMsg(msgObj);
 					},
-					onUnsubscribeSuccessMsgCallback = function(msgObj) {
+					onUnsubscribeSuccessMsgCallback : function(msgObj) {
 						that._onSubscriber_UnsubscribeSuccessMsg(msgObj);
 					},
-					onStatusUpdateCallback = function(status) {
+					onStatusUpdateCallback : function(status) {
 						that._onSubscriber_StatusUpdate(status);
 					},
 				},

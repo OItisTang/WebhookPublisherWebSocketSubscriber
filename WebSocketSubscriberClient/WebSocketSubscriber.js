@@ -42,15 +42,15 @@ class WebSocketSubscriber {
 	constructor(
 		webSocketServerAddr,
 		callbacks = {
-			onOpenCallback = null,
-			onErrorCallback = null,
-			onCloseCallback = null,
-			onStatusUpdateCallback = null,
+			onOpenCallback : null,
+			onErrorCallback : null,
+			onCloseCallback : null,
+			onStatusUpdateCallback : null,
 
-			onWelcomeMsgCallback = null,
-			onPublishMsgCallback = null,
-			onSubscribeSuccessMsgCallback = null,
-			onUnsubscribeSuccessMsgCallback = null,
+			onWelcomeMsgCallback : null,
+			onPublishMsgCallback : null,
+			onSubscribeSuccessMsgCallback : null,
+			onUnsubscribeSuccessMsgCallback : null,
 		},
 		logger = console
 	) {
