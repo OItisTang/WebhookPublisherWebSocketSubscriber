@@ -36,90 +36,40 @@ function getWebsocketErrorReason(errorCode) {
 }
 
 // ---------------------
-// WebSocketSubscriber: subscribe to a key for updates
+// WebSocketSubscriber: subscribe to one or multiple keys for updates
 // ---------------------
 class WebSocketSubscriber {
-	constructor(webSocketServerAddr, onOpenCallback, onSubscribeSuccessCallback, onPublishCallback, onStatusUpdateCallback, logger = console) {
+	constructor(
+		webSocketServerAddr,
+		callbacks = {
+			onOpenCallback = null,
+			onErrorCallback = null,
+			onCloseCallback = null,
+			onStatusUpdateCallback = null,
+
+			onWelcomeMsgCallback = null,
+			onPublishMsgCallback = null,
+			onSubscribeSuccessMsgCallback = null,
+			onUnsubscribeSuccessMsgCallback = null,
+		},
+		logger = console
+	) {
 		this.webSocketServerAddr = webSocketServerAddr;
-		this.onOpenCallback = onOpenCallback;
-		this.onSubscribeSuccessCallback = onSubscribeSuccessCallback;
-		this.onPublishCallback = onPublishCallback;
-		this.onStatusUpdateCallback = onStatusUpdateCallback;
+
+		this.onOpenCallback = callbacks.onOpenCallback;
+		this.onErrorCallback = callbacks.onErrorCallback;
+		this.onCloseCallback = callbacks.onCloseCallback;
+		this.onStatusUpdateCallback = callbacks.onStatusUpdateCallback;
+
+		this.onWelcomeMsgCallback = callbacks.onWelcomeMsgCallback;
+		this.onPublishMsgCallback = callbacks.onPublishMsgCallback;
+		this.onSubscribeSuccessMsgCallback = callbacks.onSubscribeSuccessMsgCallback;
+		this.onUnsubscribeSuccessMsgCallback = callbacks.onUnsubscribeSuccessMsgCallback;
+
 		this.logger = logger;
 	}
 
-	_onPong(msgObj) {
-		this.logger.info("WebSocketSubscriber._onPong");
-		this._clearCloseWebSocketTimeout();
-	}
-
-	_onPublish(msgObj) {
-		this.logger.info("WebSocketSubscriber._onPublish: key = [" + msgObj.key + "]");
-		this.onPublishCallback(msgObj);
-	}
-
-	_onSubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
-		this.onSubscribeSuccessCallback(msgObj);
-	}
-
-	_onUnsubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber._onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
-	}
-
-	_onWelcome(msgObj) {
-		this.logger.info("WebSocketSubscriber._onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
-		this.connectionId = msgObj.value.connectionId;
-	}
-
-	_onMessage(msgData) {
-		var msgObj = JSON.parse(msgData);
-		if (msgObj.type == "pong") {
-			this._onPong(msgObj);
-		} else if (msgObj.type == "publish") {
-			this._onPublish(msgObj);
-		} else if (msgObj.type == "subscribeSuccess") {
-			this._onSubscribeSuccess(msgObj);
-		} else if (msgObj.type == "unsubscribeSuccess") {
-			this._onUnsubscribeSuccess(msgObj);
-		} else if (msgObj.type == "welcome") {
-			this._onWelcome(msgObj);
-		} else {
-			this.logger.debug("unknown message: " + msgData);
-		}
-	}
-
-	subscribe(key) {
-		try {
-			this.logger.info("subscriber for key: [" + key + "]");
-			this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
-		} catch (e) {
-			this.logger.error(e.stack);
-		}
-	}
-
-	unsubscribe(key) {
-		try {
-			this.logger.info("unsubscribe for key: [" + key + "]");
-			this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
-		} catch (e) {
-			this.logger.error(e.stack);
-		}
-	}
-
-	_notifyStatusUpdate(status) {
-		this.onStatusUpdateCallback(status);
-	}
-
-	_clearPingTimeout() {
-		window.clearTimeout(this.pingTimeout);
-		this.pingTimeout = null;
-	}
-
-	_clearCloseWebSocketTimeout() {
-		window.clearTimeout(this.closeWebSocketTimeout);
-		this.closeWebSocketTimeout = null;
-	}
+	// core functions -----------------------------------------
 
 	_startPing() {
 		try {
@@ -144,15 +94,14 @@ class WebSocketSubscriber {
 		}, 30 * 1000);
 	}
 
-	_onOpen() {
-		this._startPing();
-		this.onOpenCallback();
+	_clearPingTimeout() {
+		window.clearTimeout(this.pingTimeout);
+		this.pingTimeout = null;
 	}
 
-	_disconnect() {
-		this._clearCloseWebSocketTimeout();
-		this._clearPingTimeout();
-		this.webSocket.close();
+	_clearCloseWebSocketTimeout() {
+		window.clearTimeout(this.closeWebSocketTimeout);
+		this.closeWebSocketTimeout = null;
 	}
 
 	_connect() {
@@ -173,11 +122,19 @@ class WebSocketSubscriber {
 		this.webSocket.onerror = function(e) {
 			that.logger.error("WebSocket error");
 			that._notifyStatusUpdate("error");
+			that._onError(e);
 		}
 		this.webSocket.onclose = function(e) {
 			that.logger.error("WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
 			that._notifyStatusUpdate("close");
+			that._onClose(e);
 		}
+	}
+
+	_disconnect() {
+		this._clearCloseWebSocketTimeout();
+		this._clearPingTimeout();
+		this.webSocket.close();
 	}
 
 	_watchDog() {
@@ -193,8 +150,92 @@ class WebSocketSubscriber {
 		}, 60 * 1000);
 	}
 
+	_notifyStatusUpdate(status) {
+		if (this.onStatusUpdateCallback) this.onStatusUpdateCallback(status);
+	}
+
+	// core handlers -----------------------------------------
+
+	_onOpen() {
+		this._startPing();
+		if (this.onOpenCallback) this.onOpenCallback();
+	}
+
+	_onMessage(msgData) {
+		var msgObj = JSON.parse(msgData);
+		if (msgObj.type == "pong") {
+			this._onPong(msgObj);
+		} else if (msgObj.type == "publish") {
+			this._onPublish(msgObj);
+		} else if (msgObj.type == "subscribeSuccess") {
+			this._onSubscribeSuccess(msgObj);
+		} else if (msgObj.type == "unsubscribeSuccess") {
+			this._onUnsubscribeSuccess(msgObj);
+		} else if (msgObj.type == "welcome") {
+			this._onWelcome(msgObj);
+		} else {
+			this.logger.debug("unknown message: " + msgData);
+		}
+	}
+
+	_onError(e) {
+		if (this.onErrorCallback) this.onErrorCallback();
+	}
+
+	_onClose(e) {
+		if (this.onCloseCallback) this.onCloseCallback();
+	}
+
+	// onMessage handlers -----------------------------------------
+
+	_onPong(msgObj) {
+		this.logger.info("WebSocketSubscriber._onPong");
+		this._clearCloseWebSocketTimeout();
+	}
+
+	_onPublish(msgObj) {
+		this.logger.info("WebSocketSubscriber._onPublish: key = [" + msgObj.key + "]");
+		if (this.onPublishMsgCallback) this.onPublishMsgCallback(msgObj);
+	}
+
+	_onSubscribeSuccess(msgObj) {
+		this.logger.info("WebSocketSubscriber._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		if (this.onSubscribeSuccessMsgCallback) this.onSubscribeSuccessMsgCallback(msgObj);
+	}
+
+	_onUnsubscribeSuccess(msgObj) {
+		this.logger.info("WebSocketSubscriber._onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		if (this.onUnsubscribeSuccessMsgCallback) this.onUnsubscribeSuccessMsgCallback(msgObj);
+	}
+
+	_onWelcome(msgObj) {
+		this.logger.info("WebSocketSubscriber._onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
+		this.connectionId = msgObj.value.connectionId;
+		if (this.onWelcomeMsgCallback) this.onWelcomeMsgCallback(msgObj);
+	}
+
+	// APIs -----------------------------------------
+
 	start() {
 		this._connect();
 		this._watchDog();
+	}
+
+	subscribe(key) {
+		try {
+			this.logger.info("subscribe for key: [" + key + "]");
+			this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
+		} catch (e) {
+			this.logger.error(e.stack);
+		}
+	}
+
+	unsubscribe(key) {
+		try {
+			this.logger.info("unsubscribe for key: [" + key + "]");
+			this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
+		} catch (e) {
+			this.logger.error(e.stack);
+		}
 	}
 }
