@@ -137,8 +137,10 @@
 		}
 
 		_onSubscriber_SubscribeSuccessMsg(msgObj) {
-			this.updateTimestamp = msgObj.value.cachedPublishData.date;
-			var info = msgObj.date + "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
+			if (msgObj.value.cachedPublishData) {
+				this.updateTimestamp = msgObj.value.cachedPublishData.date;
+			}
+			var info = "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
 			this.view.showMessage(info, msgObj);
 		}
 
