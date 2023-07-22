@@ -73,7 +73,7 @@ class WebSocketSubscriber {
 
 	_startPing() {
 		try {
-			this.logger.info("send ping to server.");
+			this.logger.debug("WebSocketSubscriber._startPing: send ping to server.");
 			this.webSocket.send('{"type": "ping"}');
 		} catch (e) {
 			this.logger.error(e.stack);
@@ -83,7 +83,7 @@ class WebSocketSubscriber {
 		
 		this._clearCloseWebSocketTimeout();
 		this.closeWebSocketTimeout = window.setTimeout(function() {
-			that.logger.error("didn't receive message from server for ping, so restart WebSocket.");
+			that.logger.error("WebSocketSubscriber._startPing: didn't receive message from server for ping, so restart WebSocket.");
 			that._disconnect();
 			that._connect();
 		}, 5 * 1000);
@@ -105,13 +105,13 @@ class WebSocketSubscriber {
 	}
 
 	_connect() {
-		this.logger.info("WebSocket new");
+		this.logger.info("WebSocketSubscriber._connect: WebSocket new");
 		this.webSocket = new WebSocket(this.webSocketServerAddr);
 
 		var that = this;
 
 		this.webSocket.onopen = function(e) {
-			that.logger.info("WebSocket open");
+			that.logger.info("WebSocketSubscriber.onopen: WebSocket open");
 			that._notifyStatusUpdate("open");
 			that._onOpen();
 		}
@@ -120,12 +120,12 @@ class WebSocketSubscriber {
 			that._onMessage(e.data);
 		}
 		this.webSocket.onerror = function(e) {
-			that.logger.error("WebSocket error");
+			that.logger.error("WebSocketSubscriber.onerror: WebSocket error");
 			that._notifyStatusUpdate("error");
 			that._onError(e);
 		}
 		this.webSocket.onclose = function(e) {
-			that.logger.error("WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
+			that.logger.error("WebSocketSubscriber.onclose: WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
 			that._notifyStatusUpdate("close");
 			that._onClose(e);
 		}
@@ -174,7 +174,7 @@ class WebSocketSubscriber {
 		} else if (msgObj.type == "welcome") {
 			this._onWelcome(msgObj);
 		} else {
-			this.logger.debug("unknown message: " + msgData);
+			this.logger.debug("WebSocketSubscriber._onMessage: unknown message: " + msgData);
 		}
 	}
 
@@ -189,7 +189,7 @@ class WebSocketSubscriber {
 	// onMessage handlers -----------------------------------------
 
 	_onPong(msgObj) {
-		this.logger.info("WebSocketSubscriber._onPong");
+		this.logger.debug("WebSocketSubscriber._onPong");
 		this._clearCloseWebSocketTimeout();
 	}
 
@@ -223,7 +223,7 @@ class WebSocketSubscriber {
 
 	subscribe(key) {
 		try {
-			this.logger.info("subscribe for key: [" + key + "]");
+			this.logger.info("WebSocketSubscriber.subscribe: subscribe for key: [" + key + "]");
 			this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
 		} catch (e) {
 			this.logger.error(e.stack);
@@ -232,7 +232,7 @@ class WebSocketSubscriber {
 
 	unsubscribe(key) {
 		try {
-			this.logger.info("unsubscribe for key: [" + key + "]");
+			this.logger.info("WebSocketSubscriber.unsubscribe: unsubscribe for key: [" + key + "]");
 			this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
 		} catch (e) {
 			this.logger.error(e.stack);
