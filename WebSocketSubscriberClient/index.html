@@ -64,7 +64,7 @@
 
 		addSubscribeKeyOption(key) {
 			this.removeSubscribeKeyOption(key);
-			
+
 			var keysDatalist = document.getElementById('keys');
 			var option = document.createElement('option');
 			option.value = key;
@@ -73,9 +73,14 @@
 
 		removeSubscribeKeyOption(key) {
 			var keysDatalist = document.getElementById('keys');
-			for(var i=0; i<keysDatalist.options.length; i++) {
-				if(keysDatalist.options[i].value == key)
-				keysDatalist.remove(i);
+			for(var i=keysDatalist.options.length-1; i>=0; i--) {
+				if(keysDatalist.options[i].value == key){
+					if (keysDatalist.options.length == 1) {
+						keysDatalist.innerHTML = ""; // use this workaround because removing last option will remove the datalist :(
+					} else {
+						keysDatalist.remove(i);
+					}
+				}
 				break;
 			}
 		}
