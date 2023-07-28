@@ -75,11 +75,7 @@
 			var keysDatalist = document.getElementById('keys');
 			for(var i=keysDatalist.options.length-1; i>=0; i--) {
 				if(keysDatalist.options[i].value == key){
-					if (keysDatalist.options.length == 1) {
-						keysDatalist.innerHTML = ""; // use this workaround because removing last option will remove the datalist :(
-					} else {
-						keysDatalist.remove(i);
-					}
+					keysDatalist.children[i].remove();
 					break;
 				}
 			}
