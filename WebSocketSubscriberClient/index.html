@@ -161,13 +161,13 @@
 				this.updateTimestamp = msgObj.value.cachedPublishData.date;
 			}
 			var info = "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
-			this.view.addSubscribeKeyOption(msbObj.value.key);
+			this.view.addSubscribeKeyOption(msgObj.value.key);
 			this.view.showMessage(info, msgObj);
 		}
 
 		_onSubscriber_UnsubscribeSuccessMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
-			this.view.removeSubscribeKeyOption(msbObj.value.key);
+			this.view.removeSubscribeKeyOption(msgObj.value.key);
 			this.view.showMessage(info, msgObj);
 		}
 
