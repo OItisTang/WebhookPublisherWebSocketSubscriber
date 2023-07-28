@@ -63,6 +63,8 @@
 		}
 
 		addSubscribeKeyOption(key) {
+			this.removeSubscribeKeyOption(key);
+			
 			var keysDatalist = document.getElementById('keys');
 			var option = document.createElement('option');
 			option.value = key;
@@ -71,7 +73,7 @@
 
 		removeSubscribeKeyOption(key) {
 			var keysDatalist = document.getElementById('keys');
-			for(i=0; i<keysDatalist.options.length; i++) {
+			for(var i=0; i<keysDatalist.options.length; i++) {
 				if(keysDatalist.options[i].value == key)
 				keysDatalist.remove(i);
 				break;
