@@ -23,8 +23,8 @@
 			.substr(1) // eat "?" character
 			.split("&")
 			.forEach(function(item) {
-				kvPair = item.split("=");
-				if (kvPair[0] === parameterName) result = decodeURIComponent(kvPair[1]);
+				kvPair = item.match(/(.*?)=(.*)/);
+				if (kvPair[1] === parameterName) result = decodeURIComponent(kvPair[2]);
 			});
 		return result;
 	}
@@ -33,8 +33,7 @@
 	// UI
 	// ---------------------
 	class UiView {
-		constructor(key, onSubscribeCallback, onUnsubscribeCallback, onUnsubscribeAllCallback) {
-			document.getElementById("subscribeKey").value = key;
+		constructor(onSubscribeCallback, onUnsubscribeCallback, onUnsubscribeAllCallback) {
 			this.onSubscribeCallback = onSubscribeCallback;
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
 			this.onUnsubscribeAllCallback = onUnsubscribeAllCallback;
@@ -178,6 +177,10 @@
 		_onSubscriber_WelcomeMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message, connId: [" + msgObj.value.connectionId + "]";
 			this.view.showMessage(info, msgObj);
+
+			if (this.autoSubscribeKey != "") {
+				this.webSocketSubscriber.unsubscribe(autoSubscribeKey);
+			}
 		}
 
 		_onSubscriber_PublishMsg(msgObj) {
@@ -213,7 +216,7 @@
 				that._onLogger_Log(logMessageClass, msg);
 			});
 
-			this.view = new UiView(this.autoSubscribeKey, function(key) {
+			this.view = new UiView(function(key) {
 				that._onUi_Subscribe(key);
 			}, function(key) {
 				that._onUi_Unsubscribe(key);
