@@ -39,33 +39,6 @@
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
 		}
 
-		prepareMainUiEventHandlers() {
-			document.getElementById("serverStatusIndicator").onclick = function() {
-				var log = document.getElementById('log');
-				if (log.style.display === "none") {
-					log.style.display = "block";
-				} else {
-					log.style.display = "none";
-				}
-			};
-
-			var that = this;
-			
-			document.getElementById("subscribeBtn").onclick = function() {
-				var key = document.getElementById("key").value;
-				if (key != "") {
-					that.onSubscribeCallback(key);
-				}
-			};
-
-			document.getElementById("unsubscribeBtn").onclick = function() {
-				var key = document.getElementById("key").value;
-				if (key != "") {
-					that.onUnsubscribeCallback(key);
-				}
-			};
-		}
-
 		setServerMethodAndStatus(serverMethod, serverStatus) {
 			document.getElementById("serverMethod").innerHTML = serverMethod;
 
@@ -101,6 +74,37 @@
 				this.msgObjTree = jsonTree.create(msgObj, messageDataDiv);
 				this.msgObjTree.expand();
 			}
+		}
+
+		_prepareMainUiEventHandlers() {
+			document.getElementById("serverStatusIndicator").onclick = function() {
+				var log = document.getElementById('log');
+				if (log.style.display === "none") {
+					log.style.display = "block";
+				} else {
+					log.style.display = "none";
+				}
+			};
+
+			var that = this;
+			
+			document.getElementById("subscribeBtn").onclick = function() {
+				var key = document.getElementById("key").value;
+				if (key != "") {
+					that.onSubscribeCallback(key);
+				}
+			};
+
+			document.getElementById("unsubscribeBtn").onclick = function() {
+				var key = document.getElementById("key").value;
+				if (key != "") {
+					that.onUnsubscribeCallback(key);
+				}
+			};
+		}
+
+		start() {
+			this._prepareMainUiEventHandlers();
 		}
 	}
 
@@ -156,17 +160,16 @@
 		start() {
 			var that = this;
 
+			// create modules
+			Logger.setLogCallback(function(logMessageClass, msg) {
+				that._onLogger_Log(logMessageClass, msg);
+			});
+
 			this.view = new UiView(this.autoSubscribeKey, function(key) {
 				that._onUi_Subscribe(key);
 			}, function(key) {
 				that._onUi_Unsubscribe(key);
 			});
-
-			Logger.setLogCallback(function(logMessageClass, msg) {
-				that._onLogger_Log(logMessageClass, msg);
-			});
-
-			this.view.prepareMainUiEventHandlers();
 
 			this.webSocketSubscriber = new WebSocketSubscriber(
 				'wss://149.28.204.205:8081',
@@ -189,6 +192,11 @@
 				},
 				Logger
 			);
+			
+			// some preparing work
+			this.view.start();
+
+			// start receiving updates
 			this.webSocketSubscriber.start();
 		}
 	}
