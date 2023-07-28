@@ -34,7 +34,7 @@
 	// ---------------------
 	class UiView {
 		constructor(key, onSubscribeCallback, onUnsubscribeCallback, onUnsubscribeAllCallback) {
-			document.getElementById("key").value = key;
+			document.getElementById("subscribeKey").value = key;
 			this.onSubscribeCallback = onSubscribeCallback;
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
 			this.onUnsubscribeAllCallback = onUnsubscribeAllCallback;
@@ -64,20 +64,20 @@
 		}
 
 		clearInput() {
-			document.getElementById("key").value = "";
+			document.getElementById("subscribeKey").value = "";
 		}
 
 		addSubscribeKeyOption(key) {
 			this.removeSubscribeKeyOption(key);
 
-			var keysDatalist = document.getElementById('keys');
+			var keysDatalist = document.getElementById('subscribeKeys');
 			var option = document.createElement('option');
 			option.value = key;
 			keysDatalist.appendChild(option);
 		}
 
 		removeSubscribeKeyOption(key) {
-			var keysDatalist = document.getElementById('keys');
+			var keysDatalist = document.getElementById('subscribeKeys');
 			for(var i=keysDatalist.options.length-1; i>=0; i--) {
 				if(keysDatalist.options[i].value == key){
 					keysDatalist.children[i].remove();
@@ -113,21 +113,21 @@
 			var that = this;
 			
 			document.getElementById("subscribeBtn").onclick = function() {
-				var key = document.getElementById("key").value;
+				var key = document.getElementById("subscribeKey").value;
 				if (key != "") {
 					if (that.onSubscribeCallback) that.onSubscribeCallback(key);
 				}
 			};
 
 			document.getElementById("unsubscribeBtn").onclick = function() {
-				var key = document.getElementById("key").value;
+				var key = document.getElementById("subscribeKey").value;
 				if (key != "") {
 					if (that.onUnsubscribeCallback) that.onUnsubscribeCallback(key);
 				}
 			};
 
 			document.getElementById("unsubscribeAllBtn").onclick = function() {
-				var keyOptions = document.getElementById('keys').getElementsByTagName('option');
+				var keyOptions = document.getElementById('subscribeKeys').getElementsByTagName('option');
 				var keys = [];
 				for (var i=0; i<keyOptions.length; i++) {
 					keys.push(keyOptions[i].value);
@@ -376,8 +376,8 @@
 				<img class="logoImg" id="logoImg" src="icon.png">
 			</div>
 			<div id="subscriptionMgr">
-				<input type="text" id="key" class="keyInput" list="keys" placeholder="subscribe a key to receive updates" size="48">
-				<datalist id="keys"></datalist>
+				<input type="text" id="subscribeKey" class="keyInput" list="subscribeKeys" placeholder="subscribe a key to receive updates" size="48">
+				<datalist id="subscribeKeys"></datalist>
 				<input type="button" id="subscribeBtn" class="actionBtn" value=" + ">
 				<input type="button" id="unsubscribeBtn" class="actionBtn" value=" - ">
 				<input type="button" id="unsubscribeAllBtn" class="actionBtn" value=" x ">
