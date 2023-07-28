@@ -179,7 +179,7 @@
 			this.view.showMessage(info, msgObj);
 
 			if (this.autoSubscribeKey != "") {
-				this.webSocketSubscriber.unsubscribe(this.autoSubscribeKey);
+				this.webSocketSubscriber.subscribe(this.autoSubscribeKey);
 			}
 		}
 
