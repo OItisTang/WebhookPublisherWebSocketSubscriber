@@ -160,17 +160,17 @@
 			this.autoSubscribeKey = autoSubscribeKey;
 		}
 
-		_onUi_Subscribe(key) {
+		_Ui_onSubscribe(key) {
 			this.view.clearInput();
 			this.webSocketSubscriber.subscribe(key);
 		}
 
-		_onUi_Unsubscribe(key) {
+		_Ui_onUnsubscribe(key) {
 			this.view.clearInput();
 			this.webSocketSubscriber.unsubscribe(key);
 		}
 
-		_onUi_UnsubscribeAll(keys) {
+		_Ui_onUnsubscribeAll(keys) {
 			this.view.clearInput();
 			
 			var that = this;
@@ -179,16 +179,16 @@
 			});
 		}
 
-		_onUi_LogLevelChange(logLevel) {
+		_Ui_onLogLevelChange(logLevel) {
 			Logger.setLogLevel(logLevel);
 		}
 
-		_onLogger_Log(logMessageClass, msg) {
+		_Logger_onLog(logMessageClass, msg) {
 			var firstLine = msg.split('\n')[0];
 			this.view.log(logMessageClass, firstLine);
 		}
 
-		_onSubscriber_WelcomeMsg(msgObj) {
+		_Subscriber_onWelcomeMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message, connId: [" + msgObj.value.connectionId + "]";
 			this.view.showMessage(info, msgObj);
 
@@ -197,13 +197,13 @@
 			}
 		}
 
-		_onSubscriber_PublishMsg(msgObj) {
+		_Subscriber_onPublishMsg(msgObj) {
 			this.updateTimestamp = msgObj.date;
 			var info = msgObj.date + " - received [" + msgObj.type + "] message for key: [" + msgObj.key + "]";
 			this.view.showMessage(info, msgObj);
 		}
 
-		_onSubscriber_SubscribeSuccessMsg(msgObj) {
+		_Subscriber_onSubscribeSuccessMsg(msgObj) {
 			if (msgObj.value.cachedPublishData) {
 				this.updateTimestamp = msgObj.value.cachedPublishData.date;
 			}
@@ -212,13 +212,13 @@
 			this.view.showMessage(info, msgObj);
 		}
 
-		_onSubscriber_UnsubscribeSuccessMsg(msgObj) {
+		_Subscriber_onUnsubscribeSuccessMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
 			this.view.removeSubscribeKeyOption(msgObj.value.key);
 			this.view.showMessage(info, msgObj);
 		}
 
-		_onSubscriber_StatusUpdate(status) {
+		_Subscriber_onStatusUpdate(status) {
 			this.view.setServerMethodAndStatus("Push", status);
 		}
 
@@ -227,36 +227,36 @@
 
 			// create modules
 			Logger.setLogCallback(function(logMessageClass, msg) {
-				that._onLogger_Log(logMessageClass, msg);
+				that._Logger_onLog(logMessageClass, msg);
 			});
 
 			this.view = new UiView(function(key) {
-				that._onUi_Subscribe(key);
+				that._Ui_onSubscribe(key);
 			}, function(key) {
-				that._onUi_Unsubscribe(key);
+				that._Ui_onUnsubscribe(key);
 			}, function(keys) {
-				that._onUi_UnsubscribeAll(keys);
+				that._Ui_onUnsubscribeAll(keys);
 			}, function(logLevel) {
-				that._onUi_LogLevelChange(logLevel);
+				that._Ui_onLogLevelChange(logLevel);
 			});
 
 			this.webSocketSubscriber = new WebSocketSubscriber(
 				'wss://149.28.204.205:8081',
 				{
 					onWelcomeMsgCallback : function(msgObj) {
-						that._onSubscriber_WelcomeMsg(msgObj);
+						that._Subscriber_onWelcomeMsg(msgObj);
 					},
 					onPublishMsgCallback : function(msgObj) {
-						that._onSubscriber_PublishMsg(msgObj);
+						that._Subscriber_onPublishMsg(msgObj);
 					},
 					onSubscribeSuccessMsgCallback : function(msgObj) {
-						that._onSubscriber_SubscribeSuccessMsg(msgObj);
+						that._Subscriber_onSubscribeSuccessMsg(msgObj);
 					},
 					onUnsubscribeSuccessMsgCallback : function(msgObj) {
-						that._onSubscriber_UnsubscribeSuccessMsg(msgObj);
+						that._Subscriber_onUnsubscribeSuccessMsg(msgObj);
 					},
 					onStatusUpdateCallback : function(status) {
-						that._onSubscriber_StatusUpdate(status);
+						that._Subscriber_onStatusUpdate(status);
 					},
 				},
 				Logger
