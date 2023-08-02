@@ -24,7 +24,7 @@
 			.split("&")
 			.forEach(function(item) {
 				kvPair = item.match(/(.*?)=(.*)/);
-				if (kvPair[1] === parameterName) result = decodeURIComponent(kvPair[2]);
+				if (kvPair && kvPair[1] === parameterName) result = decodeURIComponent(kvPair[2]);
 			});
 		return result;
 	}
