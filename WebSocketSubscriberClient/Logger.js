@@ -14,6 +14,10 @@ class Logger {
 		this.logLevel = logLevel;
 	}
 
+	static getLogLevel() {
+		return this.logLevel;
+	}
+
 	static setLogCallback(logCallback) {
 		this.logCallback = logCallback;
 	}
