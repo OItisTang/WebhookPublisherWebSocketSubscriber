@@ -33,10 +33,11 @@
 	// UI
 	// ---------------------
 	class UiView {
-		constructor(onSubscribeCallback, onUnsubscribeCallback, onUnsubscribeAllCallback) {
+		constructor(onSubscribeCallback, onUnsubscribeCallback, onUnsubscribeAllCallback, onLogLevelChangeCallback) {
 			this.onSubscribeCallback = onSubscribeCallback;
 			this.onUnsubscribeCallback = onUnsubscribeCallback;
 			this.onUnsubscribeAllCallback = onUnsubscribeAllCallback;
+			this.onLogLevelChangeCallback = onLogLevelChangeCallback;
 		}
 
 		setServerMethodAndStatus(serverMethod, serverStatus) {
@@ -99,18 +100,13 @@
 			}
 		}
 
-		_prepareMainUiEventHandlers() {
-			document.getElementById("serverStatusIndicator").onclick = function() {
-				var log = document.getElementById('log');
-				if (log.style.display === "none") {
-					log.style.display = "block";
-				} else {
-					log.style.display = "none";
-				}
-			};
+		setLogLevel(logLevel) {
+			document.getElementById("logLevel").value = logLevel;
+		}
 
+		_prepareMainUiEventHandlers() {
 			var that = this;
-			
+
 			document.getElementById("subscribeBtn").onclick = function() {
 				var key = document.getElementById("subscribeKey").value;
 				if (key != "") {
@@ -134,6 +130,20 @@
 				if (keys.length > 0) {
 					if (that.onUnsubscribeAllCallback) that.onUnsubscribeAllCallback(keys);
 				}
+			};
+
+			document.getElementById("serverStatusIndicator").onclick = function() {
+				var log = document.getElementById('log');
+				if (log.style.display === "none") {
+					log.style.display = "block";
+				} else {
+					log.style.display = "none";
+				}
+			};
+
+			document.getElementById("logLevel").onchange = function() {
+				var logLevel = document.getElementById("logLevel").value;
+				if (that.onLogLevelChangeCallback) that.onLogLevelChangeCallback(logLevel);
 			};
 		}
 
@@ -167,6 +177,10 @@
 			keys.forEach(function (key) {
 				that.webSocketSubscriber.unsubscribe(key);
 			});
+		}
+
+		_onUi_LogLevelChange(logLevel) {
+			Logger.setLogLevel(logLevel);
 		}
 
 		_onLogger_Log(logMessageClass, msg) {
@@ -222,6 +236,8 @@
 				that._onUi_Unsubscribe(key);
 			}, function(keys) {
 				that._onUi_UnsubscribeAll(keys);
+			}, function(logLevel) {
+				that._onUi_LogLevelChange(logLevel);
 			});
 
 			this.webSocketSubscriber = new WebSocketSubscriber(
@@ -247,6 +263,7 @@
 			);
 			
 			// some preparing work
+			this.view.setLogLevel(Logger.getLogLevel());
 			this.view.start();
 
 			// start receiving updates
@@ -361,6 +378,11 @@
 	#log a {
 		color: white;
 	}
+	#logLevelControl {
+		position: absolute;
+		top: 10px;
+		right: 8px;
+	}
 	#logMessages {
 		margin-left: 8px;
 		margin-right: 12px;
@@ -402,6 +424,14 @@
 	</div>
 	<div id="log" style="display: none;">
 		<h2>Log</h2>
+		<div id="logLevelControl">
+			Level:
+			<select id="logLevel">
+				<option value="0">Error</option>
+				<option value="1">Info</option>
+				<option value="2">Debug</option>
+			</select>
+		</div>
 		<div id="logMessages"></div>
 	</div>
 </body>
