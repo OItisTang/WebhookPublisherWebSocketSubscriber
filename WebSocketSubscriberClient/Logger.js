@@ -22,7 +22,7 @@ class Logger {
 		this.logCallback = logCallback;
 	}
 
-	static _getDateTimeStr() {
+	static _formatDateTimeStr() {
 		var now = new Date();
 		var dateStr =
 			now.getFullYear()
@@ -40,7 +40,7 @@ class Logger {
 			return;
 		}
 
-		var msg = this._getDateTimeStr() + ": " + str;
+		var msg = this._formatDateTimeStr() + ": " + str;
 
 		var logMessageClass = "log";
 		

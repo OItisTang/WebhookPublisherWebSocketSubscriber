@@ -40,69 +40,7 @@
 			this.onLogLevelChangeCallback = onLogLevelChangeCallback;
 		}
 
-		setServerMethodAndStatus(serverMethod, serverStatus) {
-			document.getElementById("serverMethod").innerHTML = serverMethod;
-
-			document.getElementById("serverStatusIndicator").classList.remove("open");
-			document.getElementById("serverStatusIndicator").classList.remove("error");
-			document.getElementById("serverStatusIndicator").classList.remove("close");
-			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
-		}
-
-		log(logMessageClass, msg) {
-			var logMessages = document.getElementById('logMessages');
-			if (logMessages.children.length >= 50) {
-				logMessages.removeChild(
-					logMessages.getElementsByTagName('div')[0]
-				);
-			}
-			
-			var newElement = document.createElement('div');
-			newElement.innerHTML = msg;
-			newElement.classList.add(logMessageClass);
-			logMessages.appendChild(newElement);
-		}
-
-		clearInput() {
-			document.getElementById("subscribeKey").value = "";
-		}
-
-		addSubscribeKeyOption(key) {
-			this.removeSubscribeKeyOption(key);
-
-			var keysDatalist = document.getElementById('subscribeKeys');
-			var option = document.createElement('option');
-			option.value = key;
-			keysDatalist.appendChild(option);
-		}
-
-		removeSubscribeKeyOption(key) {
-			var keysDatalist = document.getElementById('subscribeKeys');
-			for(var i=keysDatalist.options.length-1; i>=0; i--) {
-				if(keysDatalist.options[i].value == key){
-					keysDatalist.children[i].remove();
-					break;
-				}
-			}
-		}
-
-		showMessage(info, msgObj = null) {
-			var messageInfoDiv = document.getElementById("messageInfo");
-			messageInfoDiv.innerHTML = info;
-
-			if (msgObj) {
-				var messageDataDiv = document.getElementById("messageData");
-				while (messageDataDiv.firstChild) {
-					messageDataDiv.removeChild(messageDataDiv.firstChild);
-				}
-				this.msgObjTree = jsonTree.create(msgObj, messageDataDiv);
-				this.msgObjTree.expand();
-			}
-		}
-
-		setLogLevel(logLevel) {
-			document.getElementById("logLevel").value = logLevel;
-		}
+		// private methods -----------------------------------------------------------
 
 		_prepareMainUiEventHandlers() {
 			var that = this;
@@ -147,6 +85,72 @@
 			};
 		}
 
+		// public APIs -----------------------------------------------------------
+
+		clearInput() {
+			document.getElementById("subscribeKey").value = "";
+		}
+
+		addSubscribeKeyOption(key) {
+			this.removeSubscribeKeyOption(key);
+
+			var keysDatalist = document.getElementById('subscribeKeys');
+			var option = document.createElement('option');
+			option.value = key;
+			keysDatalist.appendChild(option);
+		}
+
+		removeSubscribeKeyOption(key) {
+			var keysDatalist = document.getElementById('subscribeKeys');
+			for(var i=keysDatalist.options.length-1; i>=0; i--) {
+				if(keysDatalist.options[i].value == key){
+					keysDatalist.children[i].remove();
+					break;
+				}
+			}
+		}
+
+		setServerMethodAndStatus(serverMethod, serverStatus) {
+			document.getElementById("serverMethod").innerHTML = serverMethod;
+
+			document.getElementById("serverStatusIndicator").classList.remove("open");
+			document.getElementById("serverStatusIndicator").classList.remove("error");
+			document.getElementById("serverStatusIndicator").classList.remove("close");
+			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
+		}
+
+		setLogLevel(logLevel) {
+			document.getElementById("logLevel").value = logLevel;
+		}
+
+		log(logMessageClass, msg) {
+			var logMessages = document.getElementById('logMessages');
+			if (logMessages.children.length >= 50) {
+				logMessages.removeChild(
+					logMessages.getElementsByTagName('div')[0]
+				);
+			}
+			
+			var newElement = document.createElement('div');
+			newElement.innerHTML = msg;
+			newElement.classList.add(logMessageClass);
+			logMessages.appendChild(newElement);
+		}
+
+		showMessage(info, msgObj = null) {
+			var messageInfoDiv = document.getElementById("messageInfo");
+			messageInfoDiv.innerHTML = info;
+
+			if (msgObj) {
+				var messageDataDiv = document.getElementById("messageData");
+				while (messageDataDiv.firstChild) {
+					messageDataDiv.removeChild(messageDataDiv.firstChild);
+				}
+				this.msgObjTree = jsonTree.create(msgObj, messageDataDiv);
+				this.msgObjTree.expand();
+			}
+		}
+
 		start() {
 			this._prepareMainUiEventHandlers();
 		}
@@ -158,6 +162,13 @@
 	class WebSocketSubscriberClientApp {
 		constructor(autoSubscribeKey) {
 			this.autoSubscribeKey = autoSubscribeKey;
+		}
+
+		// callback handlers -----------------------------------------------------------
+
+		_Logger_onLog(logMessageClass, msg) {
+			var firstLine = msg.split('\n')[0];
+			this.view.log(logMessageClass, firstLine);
 		}
 
 		_Ui_onSubscribe(key) {
@@ -181,11 +192,6 @@
 
 		_Ui_onLogLevelChange(logLevel) {
 			Logger.setLogLevel(logLevel);
-		}
-
-		_Logger_onLog(logMessageClass, msg) {
-			var firstLine = msg.split('\n')[0];
-			this.view.log(logMessageClass, firstLine);
 		}
 
 		_Subscriber_onWelcomeMsg(msgObj) {
@@ -221,6 +227,8 @@
 		_Subscriber_onStatusUpdate(status) {
 			this.view.setServerMethodAndStatus("Push", status);
 		}
+
+		// public APIs -----------------------------------------------------------
 
 		start() {
 			var that = this;
@@ -275,8 +283,10 @@
 	// HTML start
 	// ---------------------
 	window.onload = function() {
+		// optional parameter to auto subscribe a key
 		var autoSubscribeKey = findGetParameter("key");
 
+		// start app with parameters
 		var webSocketSubscriberClientApp = new WebSocketSubscriberClientApp(autoSubscribeKey);
 		webSocketSubscriberClientApp.start();
 		
