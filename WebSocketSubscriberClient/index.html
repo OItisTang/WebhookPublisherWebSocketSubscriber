@@ -67,11 +67,11 @@
 			};
 
 			document.getElementById("serverStatusIndicator").onclick = function() {
-				var log = document.getElementById('log');
-				if (log.style.display === "none") {
-					log.style.display = "block";
+				var logArea = document.getElementById('logArea');
+				if (logArea.style.display === "none") {
+					logArea.style.display = "block";
 				} else {
-					log.style.display = "none";
+					logArea.style.display = "none";
 				}
 			};
 
@@ -407,7 +407,7 @@
 	.jsontree_tree {
 		margin-left: -20px;
 	}
-	#log {
+	#logArea {
 		color: white;
 		position: fixed;
 		background-color: #282828e6;
@@ -417,7 +417,7 @@
 		height: 92%;
 		font-size: x-small;
 	}
-	#log a {
+	#logArea a {
 		color: white;
 	}
 	#logLevelControl {
@@ -472,7 +472,7 @@
 			<div id="messageData"></div>
 		</div>
 	</div>
-	<div id="log" style="display: none;">
+	<div id="logArea" style="display: none;">
 		<h2>Log</h2>
 		<div id="logLevelControl">
 			Level:
