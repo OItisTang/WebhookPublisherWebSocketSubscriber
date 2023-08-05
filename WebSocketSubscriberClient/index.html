@@ -60,11 +60,7 @@
 			};
 
 			document.getElementById("unsubscribeAllBtn").onclick = function() {
-				var keyOptions = document.getElementById('subscribeKeys').getElementsByTagName('option');
-				var keys = [];
-				for (var i=0; i<keyOptions.length; i++) {
-					keys.push(keyOptions[i].value);
-				}
+				var keys = this.getSubscribeKeys();
 				if (keys.length > 0) {
 					if (that.onUnsubscribeAllCallback) that.onUnsubscribeAllCallback(keys);
 				}
@@ -89,6 +85,15 @@
 
 		clearInput() {
 			document.getElementById("subscribeKey").value = "";
+		}
+
+		getSubscribeKeys() {
+			var keyOptions = document.getElementById('subscribeKeys').getElementsByTagName('option');
+			var keys = [];
+			for (var i=0; i<keyOptions.length; i++) {
+				keys.push(keyOptions[i].value);
+			}
+			return keys;
 		}
 
 		addSubscribeKeyOption(key) {
@@ -164,6 +169,15 @@
 			this.autoSubscribeKey = autoSubscribeKey;
 		}
 
+		// private methods -----------------------------------------------------------
+
+		_addAutoSubscribeKeys() {
+			var keySet = new Set(this.autoSubscribeKey.split(','));
+			for (const key of keySet) {
+				this.view.addSubscribeKeyOption(key);
+			}
+		}
+
 		// callback handlers -----------------------------------------------------------
 
 		_Logger_onLog(logMessageClass, msg) {
@@ -198,9 +212,11 @@
 			var info = "received [" + msgObj.type + "] message, connId: [" + msgObj.value.connectionId + "]";
 			this.view.showMessage(info, msgObj);
 
-			if (this.autoSubscribeKey != "") {
-				this.webSocketSubscriber.subscribe(this.autoSubscribeKey);
-			}
+			var that = this;
+			var keys = this.view.getSubscribeKeys();
+			keys.forEach(function (key) {
+				that.webSocketSubscriber.subscribe(key);
+			});
 		}
 
 		_Subscriber_onPublishMsg(msgObj) {
@@ -273,6 +289,9 @@
 			// some preparing work
 			this.view.setLogLevel(Logger.getLogLevel());
 			this.view.start();
+
+			// app start
+			this._addAutoSubscribeKeys();
 
 			// start receiving updates
 			this.webSocketSubscriber.start();
