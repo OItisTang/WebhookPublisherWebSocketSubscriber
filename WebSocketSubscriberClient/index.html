@@ -124,6 +124,16 @@
 			document.getElementById("serverStatusIndicator").classList.add(serverStatus);
 		}
 
+		setLogLevelList(logLevelList) {
+			var logLevelSelect = document.getElementById("logLevel");
+			for (const logLevelObj of logLevelList) {
+				var option = document.createElement("option");
+				option.value = logLevelObj.logLevel;
+				option.text = logLevelObj.name;
+				logLevelSelect.appendChild(option);
+			}
+		}
+
 		setLogLevel(logLevel) {
 			document.getElementById("logLevel").value = logLevel;
 		}
@@ -207,7 +217,7 @@
 		}
 
 		_Ui_onLogLevelChange(logLevel) {
-			Logger.setLogLevel(logLevel);
+			Logger.SetLogLevel(logLevel);
 		}
 
 		_Subscriber_onWelcomeMsg(msgObj) {
@@ -252,7 +262,7 @@
 			var that = this;
 
 			// create modules
-			Logger.setLogCallback(function(logMessageClass, msg) {
+			Logger.SetLogCallback(function(logMessageClass, msg) {
 				that._Logger_onLog(logMessageClass, msg);
 			});
 
@@ -289,7 +299,8 @@
 			);
 			
 			// some preparing work
-			this.view.setLogLevel(Logger.getLogLevel());
+			this.view.setLogLevelList(Logger.GetLogLevelList());
+			this.view.setLogLevel(Logger.GetLogLevel());
 			this.view.start();
 
 			// app start
@@ -458,9 +469,6 @@
 		<div id="logLevelControl">
 			Level:
 			<select id="logLevel">
-				<option value="0">Error</option>
-				<option value="1">Info</option>
-				<option value="2">Debug</option>
 			</select>
 		</div>
 		<div id="logMessages"></div>
