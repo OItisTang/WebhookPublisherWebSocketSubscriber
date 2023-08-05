@@ -1,8 +1,10 @@
 class Logger {
 	static LogLevels = {
-		Error: 0,
-		Info: 1,
-		Debug: 2,
+		Log: 0,
+		Error: 1,
+		Warning: 2,
+		Info: 3,
+		Debug: 4,
 	}
 
 	static logLevel = this.LogLevels.Info;
@@ -44,9 +46,15 @@ class Logger {
 
 		var logMessageClass = "log";
 		
-		if (logLevel == this.LogLevels.Error) {
+		if (logLevel == this.LogLevels.Log) {
+			console.log(msg);
+			logMessageClass = "log";
+		} else if (logLevel == this.LogLevels.Error) {
 			console.error(msg);
 			logMessageClass = "error";
+		} else if (logLevel == this.LogLevels.Warning) {
+			console.warn(msg);
+			logMessageClass = "warning";
 		} else if (logLevel == this.LogLevels.Info) {
 			console.info(msg);
 			logMessageClass = "info";
@@ -55,6 +63,7 @@ class Logger {
 			logMessageClass = "debug";
 		} else {
 			console.log(msg);
+			logMessageClass = "log";
 		}
 		
 		if (this.logCallback) {
@@ -62,8 +71,16 @@ class Logger {
 		}
 	}
 
+	static log(str) {
+		this._log(this.LogLevels.Log, str);
+	}
+
 	static error(str) {
 		this._log(this.LogLevels.Error, str);
+	}
+
+	static warn(str) {
+		this._log(this.LogLevels.Warning, str);
 	}
 
 	static info(str) {
