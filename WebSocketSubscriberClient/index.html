@@ -192,7 +192,8 @@
 
 		// callback handlers -----------------------------------------------------------
 
-		_Logger_onLog(logMessageClass, msg) {
+		_Logger_onLog(logLevelName, msg) {
+			var logMessageClass = logLevelName.toLowerCase();
 			var firstLine = msg.split('\n')[0];
 			this.view.log(logMessageClass, firstLine);
 		}
@@ -262,8 +263,8 @@
 			var that = this;
 
 			// create modules
-			Logger.SetLogCallback(function(logMessageClass, msg) {
-				that._Logger_onLog(logMessageClass, msg);
+			Logger.SetLogCallback(function(logLevelName, msg) {
+				that._Logger_onLog(logLevelName, msg);
 			});
 
 			this.view = new UiView(function(key) {
