@@ -174,7 +174,9 @@
 		_addAutoSubscribeKeys() {
 			var keySet = new Set(this.autoSubscribeKey.split(','));
 			for (const key of keySet) {
-				this.view.addSubscribeKeyOption(key);
+				if (key != "") {
+					this.view.addSubscribeKeyOption(key);
+				}
 			}
 		}
 
