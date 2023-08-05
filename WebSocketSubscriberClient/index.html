@@ -414,8 +414,7 @@
 		left: 0px;
 		top: 36px;
 		width: 100%;
-		height: 90%;
-		overflow-y: scroll;
+		height: 92%;
 		font-size: x-small;
 	}
 	#log a {
@@ -429,15 +428,23 @@
 	#logMessages {
 		margin-left: 8px;
 		margin-right: 12px;
+		height: 90%;
+		overflow-y: scroll;
+	}
+	#logMessages > .log {
+		color: white;
 	}
 	#logMessages > .error {
-		color: rgba(246, 138, 138, 1);
+		color: rgb(240 125 125);
+	}
+	#logMessages > .warning {
+		color: rgb(233 204 142);
 	}
 	#logMessages > .info {
-		color: rgba(108, 148, 255, 1);
+		color: rgb(98 196 240);
 	}
 	#logMessages > .debug {
-		color: rgba(0, 201, 201, 1);
+		color: rgb(13 134 255);
 	}
 </style>
 </head>
