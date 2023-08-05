@@ -60,7 +60,7 @@
 			};
 
 			document.getElementById("unsubscribeAllBtn").onclick = function() {
-				var keys = this.getSubscribeKeys();
+				var keys = that.getSubscribeKeys();
 				if (keys.length > 0) {
 					if (that.onUnsubscribeAllCallback) that.onUnsubscribeAllCallback(keys);
 				}
