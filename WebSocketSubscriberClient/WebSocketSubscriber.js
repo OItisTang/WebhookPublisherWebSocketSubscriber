@@ -83,7 +83,7 @@ class WebSocketSubscriber {
 		
 		this._clearCloseWebSocketTimeout();
 		this.closeWebSocketTimeout = window.setTimeout(function() {
-			that.logger.error("WebSocketSubscriber._startPing: didn't receive message from server for ping, so restart WebSocket.");
+			that.logger.warn("WebSocketSubscriber._startPing: didn't receive message from server for ping, so restart WebSocket.");
 			that._disconnect();
 			that._connect();
 		}, 5 * 1000);
@@ -141,7 +141,7 @@ class WebSocketSubscriber {
 		var that = this;
 		this.watchDogInterval = window.setInterval(function() {
 			if (that.webSocket.readyState != that.webSocket.OPEN) {
-				that.logger.error("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+				that.logger.warn("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
 				that._disconnect();
 				that._connect();
 			} else {
@@ -174,7 +174,7 @@ class WebSocketSubscriber {
 		} else if (msgObj.type == "welcome") {
 			this._onWelcome(msgObj);
 		} else {
-			this.logger.debug("WebSocketSubscriber._onMessage: unknown message: " + msgData);
+			this.logger.warn("WebSocketSubscriber._onMessage: unknown message: " + msgData);
 		}
 	}
 
