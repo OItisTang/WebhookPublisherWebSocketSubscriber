@@ -422,9 +422,27 @@
 		background-color: white;
 		overflow: scroll;
 	}
+	#messageTopBar {
+		display: flex;
+		flex-direction: row;
+	}
 	#messageInfo {
 		margin-left: 8px;
 		margin-top: 6px;
+		flex-grow: 1;
+	}
+	#messageDataMgr {
+		margin-top: 6px;
+		margin-right: 8px;
+	}
+	.msgDataControlBtn {
+		border-radius: 50%;
+		border: none;
+		background-color: #154f85;
+		color: white;
+		cursor: pointer;
+		width: 20px;
+		height: 20px;
 	}
 	.jsontree_tree {
 		margin-left: -20px;
@@ -492,9 +510,9 @@
 			<div id="messageTopBar">
 				<div id="messageInfo">waiting for message ...</div>
 				<div id="messageDataMgr">
-					<input type="button" id="expandBtn" class="actionBtn" value=" + ">
-					<input type="button" id="collapseBtn" class="actionBtn" value=" - ">
-					<input type="button" id="clearBtn" class="actionBtn" value=" x ">
+					<input type="button" id="expandBtn" class="msgDataControlBtn" value="+">
+					<input type="button" id="collapseBtn" class="msgDataControlBtn" value="-">
+					<input type="button" id="clearBtn" class="msgDataControlBtn" value="x">
 				</div>
 			</div>
 			<hr>
