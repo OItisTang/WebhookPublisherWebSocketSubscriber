@@ -79,6 +79,28 @@
 				var logLevel = document.getElementById("logLevel").value;
 				if (that.onLogLevelChangeCallback) that.onLogLevelChangeCallback(logLevel);
 			};
+
+			document.getElementById("expandBtn").onclick = function() {
+				if (that.msgObjTree) {
+					that.msgObjTree.expand();
+				}
+			};
+
+			document.getElementById("collapseBtn").onclick = function() {
+				if (that.msgObjTree) {
+					that.msgObjTree.collapse();
+				}
+			};
+
+			document.getElementById("clearBtn").onclick = function() {
+				var messageInfoDiv = document.getElementById("messageInfo");
+				messageInfoDiv.innerHTML = "";
+
+				var messageDataDiv = document.getElementById("messageData");
+				while (messageDataDiv.firstChild) {
+					messageDataDiv.removeChild(messageDataDiv.firstChild);
+				}
+			};
 		}
 
 		// public APIs -----------------------------------------------------------
@@ -467,7 +489,14 @@
 			</div>
 		</div>
 		<div id="contentArea">
-			<div id="messageInfo">waiting for message ...</div>
+			<div id="messageTopBar">
+				<div id="messageInfo">waiting for message ...</div>
+				<div id="messageDataMgr">
+					<input type="button" id="expandBtn" class="actionBtn" value=" + ">
+					<input type="button" id="collapseBtn" class="actionBtn" value=" - ">
+					<input type="button" id="clearBtn" class="actionBtn" value=" x ">
+				</div>
+			</div>
 			<hr>
 			<div id="messageData"></div>
 		</div>
