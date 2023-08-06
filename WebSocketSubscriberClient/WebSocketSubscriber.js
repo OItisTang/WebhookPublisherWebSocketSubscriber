@@ -163,6 +163,10 @@ class WebSocketSubscriber {
 
 	_onMessage(msgData) {
 		var msgObj = JSON.parse(msgData);
+
+		this.logger.debug("WebSocketSubscriber._onMessage: check msgObj in console");
+		this.logger.console_debug(msgObj);
+
 		if (msgObj.type == "pong") {
 			this._onPong(msgObj);
 		} else if (msgObj.type == "publish") {
