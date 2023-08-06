@@ -121,4 +121,10 @@ class Logger {
 	static debug(str) {
 		this._log(this._LogLevelDefinitions.Debug.logLevel, str);
 	}
+
+	static console_debug(str) {
+		if (this._logLevel >= this._LogLevelDefinitions.Debug.logLevel) {
+			console.debug(str);
+		}
+	}
 }
