@@ -104,7 +104,7 @@ class Logger {
 		return logLevelList;
 	}
 
-	// log APIs -----------------------------------------------------------
+	// common log APIs -----------------------------------------------------------
 
 	static log(str) {
 		this._logImpl(this._LogLevelDefinitions.Log.logLevel, str);
@@ -125,6 +125,8 @@ class Logger {
 	static debug(str) {
 		this._logImpl(this._LogLevelDefinitions.Debug.logLevel, str);
 	}
+
+	// special log APIs -----------------------------------------------------------
 
 	static console_debug(str) {
 		if (this._logLevel >= this._LogLevelDefinitions.Debug.logLevel) {
