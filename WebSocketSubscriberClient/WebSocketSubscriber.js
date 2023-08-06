@@ -165,7 +165,11 @@ class WebSocketSubscriber {
 		var msgObj = JSON.parse(msgData);
 
 		this.logger.debug("WebSocketSubscriber._onMessage: check msgObj in console");
-		this.logger.console_debug(msgObj);
+		if (this.logger.console_debug) {
+			this.logger.console_debug(msgObj);
+		} else {
+			console.debug(msgObj);
+		}
 
 		if (msgObj.type == "pong") {
 			this._onPong(msgObj);
