@@ -56,7 +56,7 @@ class Logger {
 		return this._LogLevelDefinitions.Log;
 	}
 
-	static _log(logLevel, str) {
+	static _logImpl(logLevel, str) {
 		if (logLevel > this._logLevel) {
 			return;
 		}
@@ -75,7 +75,11 @@ class Logger {
 	// public APIs -----------------------------------------------------------
 
 	static SetLogLevel(logLevel) {
-		this._logLevel = logLevel;
+		var logLevelDefinition = this._getLogLevelDefinition(logLevel);
+
+		this._logLevel = logLevelDefinition.logLevel;
+
+		this.log("Logger.SetLogLevel: logLevel changed to [" + logLevelDefinition.name + "]");
 	}
 
 	static GetLogLevel() {
@@ -103,23 +107,23 @@ class Logger {
 	// log APIs -----------------------------------------------------------
 
 	static log(str) {
-		this._log(this._LogLevelDefinitions.Log.logLevel, str);
+		this._logImpl(this._LogLevelDefinitions.Log.logLevel, str);
 	}
 
 	static error(str) {
-		this._log(this._LogLevelDefinitions.Error.logLevel, str);
+		this._logImpl(this._LogLevelDefinitions.Error.logLevel, str);
 	}
 
 	static warn(str) {
-		this._log(this._LogLevelDefinitions.Warning.logLevel, str);
+		this._logImpl(this._LogLevelDefinitions.Warning.logLevel, str);
 	}
 
 	static info(str) {
-		this._log(this._LogLevelDefinitions.Info.logLevel, str);
+		this._logImpl(this._LogLevelDefinitions.Info.logLevel, str);
 	}
 
 	static debug(str) {
-		this._log(this._LogLevelDefinitions.Debug.logLevel, str);
+		this._logImpl(this._LogLevelDefinitions.Debug.logLevel, str);
 	}
 
 	static console_debug(str) {
