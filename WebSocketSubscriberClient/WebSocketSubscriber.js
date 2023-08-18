@@ -84,6 +84,7 @@ class WebSocketSubscriber {
 		this._clearCloseWebSocketTimeout();
 		this.closeWebSocketTimeout = window.setTimeout(function() {
 			that.logger.warn("WebSocketSubscriber._startPing: didn't receive message from server for ping, so restart WebSocket.");
+			that._notifyStatusUpdate("warning");
 			that._disconnect();
 			that._connect();
 		}, 5 * 1000);
@@ -142,6 +143,7 @@ class WebSocketSubscriber {
 		this.watchDogInterval = window.setInterval(function() {
 			if (that.webSocket.readyState != that.webSocket.OPEN) {
 				that.logger.warn("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+				that._notifyStatusUpdate("warning");
 				that._disconnect();
 				that._connect();
 			} else {
