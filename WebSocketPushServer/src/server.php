@@ -11,8 +11,8 @@ use MyApp\Socket;
 $loop = React\EventLoop\Factory::create();
 $sock = new React\Socket\Server('0.0.0.0:8081', $loop);
 $secureSock = new React\Socket\SecureServer($sock, $loop, [
-    'local_cert'        => '/data/v2ray.crt', // path to your cert
-    'local_pk'          => '/data/v2ray.key', // path to your server private key
+    'local_cert'        => '/root/cert/server.crt', // path to your cert
+    'local_pk'          => '/root/cert/server.key', // path to your server private key
     'allow_self_signed' => FALSE, // Allow self signed certs (should be false in production)
     'verify_peer' => FALSE
 ]);
