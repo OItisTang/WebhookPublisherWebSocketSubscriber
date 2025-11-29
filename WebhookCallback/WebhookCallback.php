@@ -48,19 +48,41 @@ if ($keyPathInDataObj != "") {
 	}
 }
 
-\Ratchet\Client\connect('wss://systemsecurity.top:8081')->then(function($conn) use($key, $dataObj) {
-	$publishObj = new stdClass();
-	$publishObj->type = "publish";
-	$publishObj->key = $key;
-	$publishObj->date = date('Y-m-d H:i:s');
-	$publishObj->value = $dataObj;
+use Ratchet\Client\Connector as WsConnector;
+use React\EventLoop\Factory;
+use React\Socket\Connector as SocketConnector;
 
-	$publishJson = json_encode($publishObj, JSON_UNESCAPED_SLASHES);
+$loop = Factory::create();
 
-	$conn->send($publishJson);
-	$conn->close();
+// Custom TLS options
+$socketConnector = new SocketConnector($loop, [
+	'tls' => [
+		'verify_peer'       => false,
+		'verify_peer_name'  => false,
+		'allow_self_signed' => true,
+	]
+]);
 
-	echo $publishJson;
-}, function ($e) {
-	die("Could not connect! Error: {$e->getMessage()}");
-});
+$connector = new WsConnector($loop, $socketConnector);
+
+$connector('wss://149.28.204.205:8081')->then(
+	function($conn) use($key, $dataObj) {
+		$publishObj = new stdClass();
+		$publishObj->type = "publish";
+		$publishObj->key = $key;
+		$publishObj->date = date('Y-m-d H:i:s');
+		$publishObj->value = $dataObj;
+
+		$publishJson = json_encode($publishObj, JSON_UNESCAPED_SLASHES);
+
+		$conn->send($publishJson);
+		$conn->close();
+
+		echo $publishJson;
+	}, function ($e) {
+		die("Could not connect! Error: {$e->getMessage()}");
+	}
+);
+
+$loop->run();
+
