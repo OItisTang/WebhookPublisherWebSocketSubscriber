@@ -105,6 +105,20 @@ class WebSocketSubscriber {
 		this.closeWebSocketTimeout = null;
 	}
 
+	_watchDog() {
+		var that = this;
+		this.watchDogInterval = window.setInterval(function() {
+			if (that.webSocket.readyState != that.webSocket.OPEN) {
+				that.logger.warn("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+				that._notifyStatusUpdate("warning");
+				that._disconnect();
+				that._connect();
+			} else {
+				that.logger.debug("WebSocketSubscriber._watchDog: websocket readyState is OPEN.");
+			}
+		}, 60 * 1000);
+	}
+
 	_connect() {
 		this.logger.info("WebSocketSubscriber._connect: WebSocket new");
 		this.webSocket = new WebSocket(this.webSocketServerAddr);
@@ -126,7 +140,7 @@ class WebSocketSubscriber {
 			that._onError(e);
 		}
 		this.webSocket.onclose = function(e) {
-			that.logger.error("WebSocketSubscriber.onclose: WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
+			that.logger.info("WebSocketSubscriber.onclose: WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
 			that._notifyStatusUpdate("close");
 			that._onClose(e);
 		}
@@ -138,25 +152,11 @@ class WebSocketSubscriber {
 		this.webSocket.close();
 	}
 
-	_watchDog() {
-		var that = this;
-		this.watchDogInterval = window.setInterval(function() {
-			if (that.webSocket.readyState != that.webSocket.OPEN) {
-				that.logger.warn("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
-				that._notifyStatusUpdate("warning");
-				that._disconnect();
-				that._connect();
-			} else {
-				that.logger.debug("WebSocketSubscriber._watchDog: websocket readyState is OPEN.");
-			}
-		}, 60 * 1000);
-	}
+	// core handlers -----------------------------------------
 
 	_notifyStatusUpdate(status) {
 		if (this.onStatusUpdateCallback) this.onStatusUpdateCallback(status);
 	}
-
-	// core handlers -----------------------------------------
 
 	_onOpen() {
 		this._startPing();
