@@ -8,6 +8,8 @@ require __DIR__ . '/vendor/autoload.php';
 //
 // will print "output" value from the object returned by the channel service
 
+header('Content-Type: text/plain');
+
 $channel = "";
 $requestObj = null;
 $isResponseReceived = false;
