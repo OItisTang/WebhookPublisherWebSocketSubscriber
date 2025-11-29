@@ -23,9 +23,8 @@ if (
 }
 
 use React\Socket\Connector;
-use function Ratchet\Client\connect;
 use React\EventLoop\Loop;
-
+use Ratchet\Client\Connector as RatchetConnector;
 
 $loop = Loop::get();
 
@@ -38,7 +37,7 @@ $timeoutTimer = $loop->addTimer(30, function () use (&$isResponseReceived, $loop
 });
 
 // --- START: SSL Context Options for Self-Signed Certs ---
-$connector = new Connector($loop, [
+$socketConnector = new Connector($loop, [
 	'tls' => [
 		// !!! CRITICAL OPTION !!!
 		// Disable peer verification entirely. This allows self-signed certificates.
@@ -49,7 +48,9 @@ $connector = new Connector($loop, [
 ]);
 // --- END: SSL Context Options ---
 
-connect('wss://149.28.204.205:8081', [], [], $connector)->then(
+$ratchetConnector = new RatchetConnector($loop, $socketConnector);
+
+$ratchetConnector('wss://149.28.204.205:8081')->then(
 	function($conn) use($channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
 		// echo "Successfully connected to the WebSocket server!\n";
 
