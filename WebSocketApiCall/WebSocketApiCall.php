@@ -1,0 +1,94 @@
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+// parameters:
+//   channel=channel_name	// send channel will be "channel_name.q", receive channel will be "channel_name.a"
+//   request={"key1": "value1", "key2": "value2"}	// an json obj string, containing custom key-value pairs
+//
+// will print "output" value from the object returned by the channel service
+
+$channel = "";
+$requestObj = null;
+$isResponseReceived = false;
+
+if (
+	(isset($_GET['channel']) && !empty($_GET['channel'])) &&
+	(isset($_GET['request']) && !empty($_GET['request']))
+) {
+	$channel = $_GET['channel'];
+	$requestObj = json_decode($_GET['request']);
+} else {
+	die("no channel or request in GET parameter!");
+}
+
+use React\Socket\Connector;
+use function Ratchet\Client\connect;
+use React\EventLoop\Loop;
+
+
+$loop = Loop::get();
+
+// timeout
+$timeoutTimer = $loop->addTimer(30, function () use (&$isResponseReceived, $loop) {
+	if (!$isResponseReceived) {
+		$loop->stop();
+		die("Waiting for response timeout!");
+	}
+});
+
+// --- START: SSL Context Options for Self-Signed Certs ---
+$connector = new Connector($loop, [
+	'tls' => [
+		// !!! CRITICAL OPTION !!!
+		// Disable peer verification entirely. This allows self-signed certificates.
+		'verify_peer' => false,
+		// Also good practice to disable peer name verification if the hostname doesn't match the cert
+		'verify_peer_name' => false,
+	]
+]);
+// --- END: SSL Context Options ---
+
+connect('wss://149.28.204.205:8081', [], [], $connector)->then(
+	function($conn) use($channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
+		// echo "Successfully connected to the WebSocket server!\n";
+
+		$conn->on('message', function($msgData) use ($conn, $channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
+			$msgObj = json_decode($msgData);
+			if ($msgObj->type == "welcome") {
+				$conn->send('{"type": "subscribe", "key":"' . $channel . '.a"}');
+			} elseif ($msgObj->type == "subscribeSuccess") {
+				$publishObj = new stdClass();
+				$publishObj->type = "publish";
+				$publishObj->key = $channel . "q";
+				$publishObj->date = date('Y-m-d H:i:s');
+				$publishObj->value = $requestObj;
+
+				$publishJson = json_encode($publishObj, JSON_UNESCAPED_SLASHES);
+				// echo "Send message: {$publishJson}\n";
+				$conn->send($publishJson);
+			} elseif ($msgObj->type == "publish") {
+				$isResponseReceived = true;
+				$loop->cancelTimer($timeoutTimer);
+
+				$valueObj = $msgObj->value;
+				echo $valueObj->output;
+
+				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
+				$conn->close();
+			}
+		});
+
+		$conn->on('close', function() use (&$isResponseReceived, $loop, $timeoutTimer) {
+			// echo "Connection closed.\n";
+			if (!$isResponseReceived) {
+				$loop->cancelTimer($timeoutTimer);
+			}
+		});
+	}, function ($e) use ($loop, $timeoutTimer) {
+		$loop->cancelTimer($timeoutTimer);
+		$loop->stop();
+		die("Could not connect! Error: {$e->getMessage()}");
+	}
+);
+
