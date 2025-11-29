@@ -61,7 +61,7 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 			} elseif ($msgObj->type == "subscribeSuccess") {
 				$publishObj = new stdClass();
 				$publishObj->type = "publish";
-				$publishObj->key = $channel . "q";
+				$publishObj->key = $channel . ".q";
 				$publishObj->date = date('Y-m-d H:i:s');
 				$publishObj->value = $requestObj;
 
