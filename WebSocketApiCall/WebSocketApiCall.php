@@ -31,7 +31,7 @@ use Ratchet\Client\Connector as RatchetConnector;
 $loop = Loop::get();
 
 // timeout
-$timeoutTimer = $loop->addTimer(30, function () use (&$isResponseReceived, $loop) {
+$timeoutTimer = $loop->addTimer(10, function () use (&$isResponseReceived, $loop) {
 	if (!$isResponseReceived) {
 		$loop->stop();
 		die("Waiting for response timeout!");
