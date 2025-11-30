@@ -13,6 +13,7 @@ header('Content-Type: text/plain');
 $channel = "";
 $requestObj = null;
 $isResponseReceived = false;
+$isTimedout = false;
 
 if (
 	(isset($_GET['channel']) && !empty($_GET['channel'])) &&
@@ -45,12 +46,13 @@ $socketConnector = new Connector($loop, [
 $ratchetConnector = new RatchetConnector($loop, $socketConnector);
 
 $ratchetConnector('wss://149.28.204.205:8081')->then(
-	function($conn) use($channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
+	function($conn) use($channel, $requestObj, &$isResponseReceived, &$isTimedout, $loop, $timeoutTimer) {
 		// echo "Successfully connected to the WebSocket server!\n";
 
 		// timeout
-		$timeoutTimer = $loop->addTimer(10, function () use ($conn, $channel, &$isResponseReceived, $loop) {
+		$timeoutTimer = $loop->addTimer(10, function () use ($conn, $channel, &$isResponseReceived, &$isTimedout, $loop) {
 			if (!$isResponseReceived) {
+				$isTimedout = true;
 				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
 				$conn->close();
 
@@ -85,9 +87,9 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 			}
 		});
 
-		$conn->on('close', function() use (&$isResponseReceived, $loop, $timeoutTimer) {
+		$conn->on('close', function() use (&$isResponseReceived, &$isTimedout, $loop, $timeoutTimer) {
 			// echo "Connection closed.\n";
-			if (!$isResponseReceived) {
+			if (!$isResponseReceived && !$isTimedout) {
 				$loop->cancelTimer($timeoutTimer);
 				$loop->stop();
 				die("Connection closed unexpectedly!");
