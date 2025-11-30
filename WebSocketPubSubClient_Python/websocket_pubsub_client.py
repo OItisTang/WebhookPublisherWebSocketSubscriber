@@ -134,7 +134,14 @@ class WebSocketPubSubClient:
     async def _disconnect(self):
         self._cancelCloseWebSocketTask()
         self._cancelPingTask()
-        await self.webSocket.close()
+
+        try:
+            await self.webSocket.close()
+        except Exception as e:
+            self.logger.info(f"WebSocketPubSubClient._disconnect: error, with reason: [{close_code} - {close_reason}]")
+            await self._notifyStatusUpdate("close");
+            await self._onClose();
+
         self.webSocket = None
 
     # core handlers -----------------------------------------
