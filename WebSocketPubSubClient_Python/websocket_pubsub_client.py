@@ -97,11 +97,6 @@ class WebSocketPubSubClient:
             else:
                 self.logger.debug("WebSocketPubSubClient._watchdog_task_fun: websocket is OPEN.")
 
-    def _cancelWatchDogTask(self):
-        if self._watchdog_task:
-            self._watchdog_task.cancel()
-            self._watchdog_task = None
-
     async def _connect(self):
         self.logger.info("WebSocketPubSubClient._connect: WebSocket connect")
 
@@ -139,8 +134,8 @@ class WebSocketPubSubClient:
     async def _disconnect(self):
         self._cancelCloseWebSocketTask()
         self._cancelPingTask()
-        self._cancelWatchDogTask()
         await self.webSocket.close()
+        self.webSocket = None
 
     # core handlers -----------------------------------------
 
@@ -149,7 +144,6 @@ class WebSocketPubSubClient:
 
     async def _onOpen(self):
         self._startPing()
-        self._startWatchDog()
         if self.onOpenCallback: await self.onOpenCallback()
 
     async def _onMessage(self, msgData):
@@ -205,6 +199,7 @@ class WebSocketPubSubClient:
 
     async def start(self):
         await self._connect()
+        self._startWatchDog()
 
     async def publish(self, key, dataObj):
         try:
