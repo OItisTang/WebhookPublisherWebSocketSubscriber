@@ -55,8 +55,6 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 				$isTimedout = true;
 				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
 				$conn->close();
-
-				$loop->stop();
 				die("Waiting for response timeout!");
 			}
 		});
