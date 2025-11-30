@@ -30,14 +30,6 @@ use Ratchet\Client\Connector as RatchetConnector;
 
 $loop = Loop::get();
 
-// timeout
-$timeoutTimer = $loop->addTimer(10, function () use (&$isResponseReceived, $loop) {
-	if (!$isResponseReceived) {
-		$loop->stop();
-		die("Waiting for response timeout!");
-	}
-});
-
 // --- START: SSL Context Options for Self-Signed Certs ---
 $socketConnector = new Connector($loop, [
 	'tls' => [
@@ -55,6 +47,17 @@ $ratchetConnector = new RatchetConnector($loop, $socketConnector);
 $ratchetConnector('wss://149.28.204.205:8081')->then(
 	function($conn) use($channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
 		// echo "Successfully connected to the WebSocket server!\n";
+
+		// timeout
+		$timeoutTimer = $loop->addTimer(10, function () use ($conn, $channel, &$isResponseReceived, $loop) {
+			if (!$isResponseReceived) {
+				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
+				$conn->close();
+
+				$loop->stop();
+				die("Waiting for response timeout!");
+			}
+		});
 
 		$conn->on('message', function($msgData) use ($conn, $channel, $requestObj, &$isResponseReceived, $loop, $timeoutTimer) {
 			$msgObj = json_decode($msgData);
@@ -75,7 +78,7 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 				$loop->cancelTimer($timeoutTimer);
 
 				$valueObj = $msgObj->value;
-				echo $valueObj->output;
+				echo $valueObj->output; // output to user, business done
 
 				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
 				$conn->close();
@@ -86,6 +89,8 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 			// echo "Connection closed.\n";
 			if (!$isResponseReceived) {
 				$loop->cancelTimer($timeoutTimer);
+				$loop->stop();
+				die("Connection closed unexpectedly!");
 			}
 		});
 	}, function ($e) use ($loop, $timeoutTimer) {
