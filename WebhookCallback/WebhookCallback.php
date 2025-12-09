@@ -2,22 +2,42 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-// format: model.shortUrl
-// example data object: { "model": { "shortUrl": "https://trello.com/b/abcdefg" } }
-// key will be: "https://trello.com/b/abcdefg"
-$keyPathInDataObj = "";
+// Parameter: "key" or "keyPathInDataObj"
+//   for "key"
+//     format: plain_key_string
+//   for "keyPathInDataObj"
+//     format: model.shortUrl
+//     if data object is: { "model": { "shortUrl": "https://trello.com/b/abcdefg" } }
+//     key will be: "https://trello.com/b/abcdefg"
+//
+// Parameter: "dataObj"
+//   only needed for GET method, for POST the dataObj should in POST data body
+//   format: dataObj={"key1":"value1","key2":"value2"}
 
 $key = "";
+$keyPathInDataObj = "";
+$dataObjStr = "";
 
-if (isset($_GET['keyPathInDataObj']) && !empty($_GET['keyPathInDataObj'])) {
+if (isset($_GET['key']) && !empty($_GET['key'])) {
+	$key = $_GET['key'];
+} elseif (isset($_GET['keyPathInDataObj']) && !empty($_GET['keyPathInDataObj'])) {
 	$keyPathInDataObj = $_GET['keyPathInDataObj'];
 } else {
-	if (isset($_GET['key']) && !empty($_GET['key'])) {
-		$key = $_GET['key'];
-	} else {
-		die("no keyPathInDataObj or key in GET parameter");
-	}
+	die("no key or keyPathInDataObj in GET parameter");
 }
+
+if (isset($_GET['dataObj']) && !empty($_GET['dataObj'])) {
+	$dataObjStr = $_GET['dataObj'];
+} else {
+	$dataObjStr = file_get_contents("php://input");
+}
+
+
+// ---------------------------------------------
+// prepare dataObj
+// ---------------------------------------------
+
+$dataObj = json_decode($dataObjStr);
 
 function get_value_from_obj_by_path($object, $path) {
 	$o = $object;
@@ -37,9 +57,6 @@ function get_value_from_obj_by_path($object, $path) {
 	return $o;
 }
 
-$rawPostData = file_get_contents("php://input");
-$dataObj = json_decode($rawPostData);
-
 if ($keyPathInDataObj != "") {
 	$key = get_value_from_obj_by_path($dataObj, $keyPathInDataObj);
 
@@ -47,6 +64,11 @@ if ($keyPathInDataObj != "") {
 		die("{$keyPathInDataObj} in data is null");
 	}
 }
+
+
+// ---------------------------------------------
+// publish data to WebSocket server
+// ---------------------------------------------
 
 use Ratchet\Client\Connector as WsConnector;
 use React\EventLoop\Factory;
