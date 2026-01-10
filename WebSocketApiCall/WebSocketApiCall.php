@@ -12,6 +12,7 @@ header('Content-Type: text/plain');
 
 $channel = "";
 $requestObj = null;
+$timeoutSec = 10;
 $isResponseReceived = false;
 $isTimedout = false;
 
@@ -23,6 +24,10 @@ if (
 	$requestObj = json_decode($_GET['request']);
 } else {
 	die("no channel or request in GET parameter!");
+}
+
+if (isset($_GET['timeout']) && is_numeric($_GET['timeout'])) {
+	$timeoutSec = (int)$_GET['timeout'];
 }
 
 use React\Socket\Connector;
@@ -50,7 +55,7 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 		// echo "Successfully connected to the WebSocket server!\n";
 
 		// timeout
-		$timeoutTimer = $loop->addTimer(10, function () use ($conn, $channel, &$isResponseReceived, &$isTimedout, $loop) {
+		$timeoutTimer = $loop->addTimer($timeoutSec, function () use ($conn, $channel, &$isResponseReceived, &$isTimedout, $loop) {
 			if (!$isResponseReceived) {
 				$isTimedout = true;
 				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
