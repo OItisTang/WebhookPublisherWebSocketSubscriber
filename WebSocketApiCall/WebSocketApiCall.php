@@ -51,7 +51,7 @@ $socketConnector = new Connector($loop, [
 $ratchetConnector = new RatchetConnector($loop, $socketConnector);
 
 $ratchetConnector('wss://149.28.204.205:8081')->then(
-	function($conn) use($channel, $requestObj, &$isResponseReceived, &$isTimedout, $loop, $timeoutTimer) {
+	function($conn) use($channel, $requestObj, $timeoutSec, &$isResponseReceived, &$isTimedout, $loop, $timeoutTimer) {
 		// echo "Successfully connected to the WebSocket server!\n";
 
 		// timeout
