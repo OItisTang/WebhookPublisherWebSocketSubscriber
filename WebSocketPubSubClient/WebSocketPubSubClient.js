@@ -35,10 +35,20 @@ function getWebsocketErrorReason(errorCode) {
 	return reason;
 }
 
+function getLocalDateStr(date) {
+	const yyyy = date.getFullYear();
+	const mm = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+	const dd = String(date.getDate()).padStart(2, '0');
+	const hh = String(date.getHours()).padStart(2, '0');
+	const min = String(date.getMinutes()).padStart(2, '0');
+	const ss = String(date.getSeconds()).padStart(2, '0');
+	return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+}
+
 // ---------------------
-// WebSocketSubscriber: subscribe to one or multiple keys for updates
+// WebSocketPubSubClient: subscribe to one or multiple keys for updates, and publish messages for key
 // ---------------------
-class WebSocketSubscriber {
+class WebSocketPubSubClient {
 	constructor(
 		webSocketServerAddr,
 		callbacks = {
@@ -73,7 +83,7 @@ class WebSocketSubscriber {
 
 	_startPing() {
 		try {
-			this.logger.debug("WebSocketSubscriber._startPing: send ping to server.");
+			this.logger.debug("WebSocketPubSubClient._startPing: send ping to server.");
 			this.webSocket.send('{"type": "ping"}');
 		} catch (e) {
 			this.logger.error(e.stack);
@@ -83,7 +93,7 @@ class WebSocketSubscriber {
 		
 		this._clearCloseWebSocketTimeout();
 		this.closeWebSocketTimeout = window.setTimeout(function() {
-			that.logger.warn("WebSocketSubscriber._startPing: didn't receive message from server for ping, so restart WebSocket.");
+			that.logger.warn("WebSocketPubSubClient._startPing: didn't receive message from server for ping, so restart WebSocket.");
 			that._notifyStatusUpdate("warning");
 			that._disconnect();
 			that._connect();
@@ -109,24 +119,24 @@ class WebSocketSubscriber {
 		var that = this;
 		this.watchDogInterval = window.setInterval(function() {
 			if (that.webSocket.readyState != that.webSocket.OPEN) {
-				that.logger.warn("WebSocketSubscriber._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
+				that.logger.warn("WebSocketPubSubClient._watchDog: websocket readyState is not OPEN, so restart WebSocket.");
 				that._notifyStatusUpdate("warning");
 				that._disconnect();
 				that._connect();
 			} else {
-				that.logger.debug("WebSocketSubscriber._watchDog: websocket readyState is OPEN.");
+				that.logger.debug("WebSocketPubSubClient._watchDog: websocket readyState is OPEN.");
 			}
 		}, 60 * 1000);
 	}
 
 	_connect() {
-		this.logger.info("WebSocketSubscriber._connect: WebSocket new");
+		this.logger.info("WebSocketPubSubClient._connect: WebSocket new");
 		this.webSocket = new WebSocket(this.webSocketServerAddr);
 
 		var that = this;
 
 		this.webSocket.onopen = function(e) {
-			that.logger.info("WebSocketSubscriber.onopen: WebSocket open");
+			that.logger.info("WebSocketPubSubClient.onopen: WebSocket open");
 			that._notifyStatusUpdate("open");
 			that._onOpen();
 		}
@@ -135,12 +145,12 @@ class WebSocketSubscriber {
 			that._onMessage(e.data);
 		}
 		this.webSocket.onerror = function(e) {
-			that.logger.error("WebSocketSubscriber.onerror: WebSocket error");
+			that.logger.error("WebSocketPubSubClient.onerror: WebSocket error");
 			that._notifyStatusUpdate("error");
 			that._onError(e);
 		}
 		this.webSocket.onclose = function(e) {
-			that.logger.info("WebSocketSubscriber.onclose: WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
+			that.logger.info("WebSocketPubSubClient.onclose: WebSocket close, with reason: [" + e.code + " - " + getWebsocketErrorReason(e.code) + "]");
 			that._notifyStatusUpdate("close");
 			that._onClose(e);
 		}
@@ -166,7 +176,7 @@ class WebSocketSubscriber {
 	_onMessage(msgData) {
 		var msgObj = JSON.parse(msgData);
 
-		this.logger.debug("WebSocketSubscriber._onMessage: check msgObj in console");
+		this.logger.debug("WebSocketPubSubClient._onMessage: check msgObj in console");
 		if (this.logger.console_debug) {
 			this.logger.console_debug(msgObj);
 		} else {
@@ -184,7 +194,7 @@ class WebSocketSubscriber {
 		} else if (msgObj.type == "welcome") {
 			this._onWelcome(msgObj);
 		} else {
-			this.logger.warn("WebSocketSubscriber._onMessage: unknown message: " + msgData);
+			this.logger.warn("WebSocketPubSubClient._onMessage: unknown message: " + msgData);
 		}
 	}
 
@@ -199,27 +209,27 @@ class WebSocketSubscriber {
 	// onMessage handlers -----------------------------------------
 
 	_onPong(msgObj) {
-		this.logger.debug("WebSocketSubscriber._onPong");
+		this.logger.debug("WebSocketPubSubClient._onPong");
 		this._clearCloseWebSocketTimeout();
 	}
 
 	_onPublish(msgObj) {
-		this.logger.info("WebSocketSubscriber._onPublish: key = [" + msgObj.key + "]");
+		this.logger.info("WebSocketPubSubClient._onPublish: key = [" + msgObj.key + "]");
 		if (this.onPublishMsgCallback) this.onPublishMsgCallback(msgObj);
 	}
 
 	_onSubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		this.logger.info("WebSocketPubSubClient._onSubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 		if (this.onSubscribeSuccessMsgCallback) this.onSubscribeSuccessMsgCallback(msgObj);
 	}
 
 	_onUnsubscribeSuccess(msgObj) {
-		this.logger.info("WebSocketSubscriber._onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
+		this.logger.info("WebSocketPubSubClient._onUnsubscribeSuccess: connectionId = [" + msgObj.value.connectionId + "], key = [" + msgObj.value.key + "]");
 		if (this.onUnsubscribeSuccessMsgCallback) this.onUnsubscribeSuccessMsgCallback(msgObj);
 	}
 
 	_onWelcome(msgObj) {
-		this.logger.info("WebSocketSubscriber._onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
+		this.logger.info("WebSocketPubSubClient._onWelcome: connectionId = [" + msgObj.value.connectionId + "]");
 		this.connectionId = msgObj.value.connectionId;
 		if (this.onWelcomeMsgCallback) this.onWelcomeMsgCallback(msgObj);
 	}
@@ -231,9 +241,27 @@ class WebSocketSubscriber {
 		this._watchDog();
 	}
 
+	publish(key, dataObj) {
+		try {
+			publishObj = {
+				type: "publish",
+				key: key,
+				date: getLocalDateStr(new Date()),
+				value: dataObj
+			}
+
+			this.logger.info("WebSocketPubSubClient.publish: for key: [" + key + "]");
+			this.logger.debug(JSON.stringify(publishObj, null, 4));
+
+			this.webSocket.send(JSON.stringify(publishObj));
+		} catch (e) {
+			this.logger.error(e.stack);
+		}
+	}
+
 	subscribe(key) {
 		try {
-			this.logger.info("WebSocketSubscriber.subscribe: subscribe for key: [" + key + "]");
+			this.logger.info("WebSocketPubSubClient.subscribe: subscribe for key: [" + key + "]");
 			this.webSocket.send('{"type": "subscribe", "key":"' + key + '"}');
 		} catch (e) {
 			this.logger.error(e.stack);
@@ -242,7 +270,7 @@ class WebSocketSubscriber {
 
 	unsubscribe(key) {
 		try {
-			this.logger.info("WebSocketSubscriber.unsubscribe: unsubscribe for key: [" + key + "]");
+			this.logger.info("WebSocketPubSubClient.unsubscribe: unsubscribe for key: [" + key + "]");
 			this.webSocket.send('{"type": "unsubscribe", "key":"' + key + '"}');
 		} catch (e) {
 			this.logger.error(e.stack);

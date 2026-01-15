@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="icon.png">
 <script src="https://oitistang.github.io/Logger/Logger.js"></script>
-<script src="WebSocketSubscriber.js"></script>
+<script src="WebSocketPubSubClient.js"></script>
 <link rel="stylesheet" href="https://summerstyle.github.io/jsonTreeViewer/libs/jsonTree/jsonTree.css">
 <script src="https://summerstyle.github.io/jsonTreeViewer/libs/jsonTree/jsonTree.js"></script>
 <script type="text/javascript">
@@ -216,12 +216,12 @@
 
 		_Ui_onSubscribe(key) {
 			this.view.clearInput();
-			this.webSocketSubscriber.subscribe(key);
+			this.wsPubSub.subscribe(key);
 		}
 
 		_Ui_onUnsubscribe(key) {
 			this.view.clearInput();
-			this.webSocketSubscriber.unsubscribe(key);
+			this.wsPubSub.unsubscribe(key);
 		}
 
 		_Ui_onUnsubscribeAll(keys) {
@@ -229,7 +229,7 @@
 			
 			var that = this;
 			keys.forEach(function (key) {
-				that.webSocketSubscriber.unsubscribe(key);
+				that.wsPubSub.unsubscribe(key);
 			});
 		}
 
@@ -237,24 +237,24 @@
 			Logger.SetLogLevel(logLevel);
 		}
 
-		_Subscriber_onWelcomeMsg(msgObj) {
+		_PubSub_onWelcomeMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message, connId: [" + msgObj.value.connectionId + "]";
 			this.view.showMessage(info, msgObj);
 
 			var that = this;
 			var keys = this.view.getSubscribeKeys();
 			keys.forEach(function (key) {
-				that.webSocketSubscriber.subscribe(key);
+				that.wsPubSub.subscribe(key);
 			});
 		}
 
-		_Subscriber_onPublishMsg(msgObj) {
+		_PubSub_onPublishMsg(msgObj) {
 			this.updateTimestamp = msgObj.date;
 			var info = msgObj.date + " - received [" + msgObj.type + "] message for key: [" + msgObj.key + "]";
 			this.view.showMessage(info, msgObj);
 		}
 
-		_Subscriber_onSubscribeSuccessMsg(msgObj) {
+		_PubSub_onSubscribeSuccessMsg(msgObj) {
 			if (msgObj.value.cachedPublishData) {
 				this.updateTimestamp = msgObj.value.cachedPublishData.date;
 			}
@@ -263,13 +263,13 @@
 			this.view.showMessage(info, msgObj);
 		}
 
-		_Subscriber_onUnsubscribeSuccessMsg(msgObj) {
+		_PubSub_onUnsubscribeSuccessMsg(msgObj) {
 			var info = "received [" + msgObj.type + "] message for key: [" + msgObj.value.key + "]";
 			this.view.removeSubscribeKeyOption(msgObj.value.key);
 			this.view.showMessage(info, msgObj);
 		}
 
-		_Subscriber_onStatusUpdate(status) {
+		_PubSub_onStatusUpdate(status) {
 			this.view.setServerMethodAndStatus("Push", status);
 		}
 
@@ -293,23 +293,23 @@
 				that._Ui_onLogLevelChange(logLevel);
 			});
 
-			this.webSocketSubscriber = new WebSocketSubscriber(
+			this.wsPubSub = new WebSocketPubSubClient(
 				'wss://149.28.204.205:8081',
 				{
 					onWelcomeMsgCallback : function(msgObj) {
-						that._Subscriber_onWelcomeMsg(msgObj);
+						that._PubSub_onWelcomeMsg(msgObj);
 					},
 					onPublishMsgCallback : function(msgObj) {
-						that._Subscriber_onPublishMsg(msgObj);
+						that._PubSub_onPublishMsg(msgObj);
 					},
 					onSubscribeSuccessMsgCallback : function(msgObj) {
-						that._Subscriber_onSubscribeSuccessMsg(msgObj);
+						that._PubSub_onSubscribeSuccessMsg(msgObj);
 					},
 					onUnsubscribeSuccessMsgCallback : function(msgObj) {
-						that._Subscriber_onUnsubscribeSuccessMsg(msgObj);
+						that._PubSub_onUnsubscribeSuccessMsg(msgObj);
 					},
 					onStatusUpdateCallback : function(status) {
-						that._Subscriber_onStatusUpdate(status);
+						that._PubSub_onStatusUpdate(status);
 					},
 				},
 				Logger
@@ -324,7 +324,7 @@
 			this._addAutoSubscribeKeys();
 
 			// start receiving updates
-			this.webSocketSubscriber.start();
+			this.wsPubSub.start();
 		}
 	}
 
