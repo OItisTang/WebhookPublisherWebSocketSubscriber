@@ -243,7 +243,7 @@ class WebSocketPubSubClient {
 
 	publish(key, dataObj) {
 		try {
-			publishObj = {
+			var publishObj = {
 				type: "publish",
 				key: key,
 				date: getLocalDateStr(new Date()),
