@@ -87,6 +87,7 @@ $ratchetConnector('wss://149.28.204.205:8081')->then(
 
 				$conn->send('{"type": "unsubscribe", "key":"' . $channel . '.a"}');
 				$conn->close();
+				exit();
 			}
 		});
 
