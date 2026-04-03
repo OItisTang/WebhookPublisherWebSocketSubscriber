@@ -42,7 +42,7 @@ class App:
 
     async def start(self):
         self.wsPubSub = WebSocketPubSubClient(
-            "wss://149.28.204.205:8081",
+            "wss://tangchenggang.me:8081",
             callbacks = {
                 'onOpenCallback': None,
                 'onErrorCallback': None,

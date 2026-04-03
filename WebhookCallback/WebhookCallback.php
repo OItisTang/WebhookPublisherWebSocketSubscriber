@@ -87,7 +87,7 @@ $socketConnector = new SocketConnector($loop, [
 
 $connector = new WsConnector($loop, $socketConnector);
 
-$connector('wss://149.28.204.205:8081')->then(
+$connector('wss://localhost:8081')->then(
 	function($conn) use($key, $dataObj) {
 		$publishObj = new stdClass();
 		$publishObj->type = "publish";
